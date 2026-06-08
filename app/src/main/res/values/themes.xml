@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://android.com">
     <!-- Base application theme. -->
     <style name="Theme.PushControl" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Primary brand color. -->
@@ -11,8 +11,25 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+
+        <!-- Указываем ссылку на наш кастомный стиль для выпадающего меню -->
+        <item name="popupTheme">@style/Theme.PushControl.PopupOverlay</item>
     </style>
+
+    <!-- Окончательный рабочий стиль для выпадающего меню -->
+    <style name="Theme.PushControl.PopupOverlay" parent="ThemeOverlay.AppCompat.Light">
+        <!-- 1. Главный переключатель: меняем цвет всей поверхности Material-меню на КРАСНЫЙ -->
+        <item name="colorSurface">#FF0000</item>
+
+        <!-- 2. Меняем цвет текста и иконок на БЕЛЫЙ -->
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColor">#FFFFFF</item>
+
+        <!-- 3. Сбрасываем старые параметры, чтобы они не мешали -->
+        <item name="android:itemBackground">@null</item>
+    </style>
+
+
 
     <style name="Theme.PushControl.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -20,6 +37,4 @@
     </style>
 
     <style name="Theme.PushControl.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.PushControl.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

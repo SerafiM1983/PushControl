@@ -46,4 +46,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    // Обязательно для работы Mockito на эмуляторе/реальном устройстве
+    androidTestImplementation ("org.mockito:mockito-android:5.11.0")
+    androidTestImplementation ("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation ("androidx.test:runner:1.6.1")
+
+    // Подключение рекламы
+    implementation("com.yandex.android:mobileads:7.12.0")
 }
