@@ -13,11 +13,11 @@ import java.util.List;
 
 public class ListPush {
 
-	public List<String> getAppsWithNotifications(Context context) {
+	public List<AppModel> getAppsWithNotifications(Context context) {
 		PackageManager packageManager = context.getPackageManager();
 		// Получаем список всех установленныъ приложений
 		List<ApplicationInfo> installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
-		List<String> allowedAppsList = new ArrayList<>();
+		List<AppModel> allowedAppsList = new ArrayList<>();
 
 		for (ApplicationInfo appInfo : installedApps) {
 			// Исключаем системные процессы, проверяем только пользовательские
@@ -29,9 +29,10 @@ public class ListPush {
 				// Для проверки чужих приложений на Android 13+ используется проверка через
 				// AppOps или PackageManager
 				if (isNotificationPermissionGrantedApp(context, appInfo.packageName)) {
-					String appName = appInfo.loadLabel(packageManager).toString();
-					allowedAppsList.add(appName + " (" + appInfo.packageName + ")");
-
+					AppModel appNotifigationCheck = new AppModel(
+							appInfo.loadLabel(packageManager).toString(), appInfo.packageName,
+							appInfo.loadIcon(packageManager));
+					allowedAppsList.add(appNotifigationCheck);
 				}
 			}
 		}
