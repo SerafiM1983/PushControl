@@ -1,6 +1,7 @@
 package com.example.pushcontrol.ui.home;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import com.yandex.mobile.ads.common.AdRequest;
 import com.yandex.mobile.ads.common.MobileAds;
 
 public class HomeFragment extends Fragment {
+	private final String TAG = "AdRequest";
 
 	private FragmentHomeBinding binding;
 
@@ -32,6 +34,7 @@ public class HomeFragment extends Fragment {
 		binding.banner.setAdUnitId("R-M-19407785-1");
 		binding.banner.setAdSize(BannerAdSize.stickySize(getActivity().getApplicationContext(), 320));
 		AdRequest adRequest = new AdRequest.Builder().build();
+		//Log.d(TAG, "" )
 		binding.banner.loadAd(adRequest);
 		View root = binding.getRoot();
 
