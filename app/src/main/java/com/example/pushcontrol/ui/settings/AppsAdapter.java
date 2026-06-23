@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.pushcontrol.Constans.PreferencesConstants;
 import com.example.pushcontrol.R;
 
 import java.util.List;
@@ -48,7 +47,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 
 		// Установка состояния передвижного переключателя
 		holder.switchNotification.setOnCheckedChangeListener(null);
-		holder.switchNotification.setChecked(app.isNotificationEnable);
+		holder.switchNotification.setChecked(app.isNotificationEnable());
 
 		// Подгружаем иконку
 		try {
@@ -58,16 +57,14 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 			holder.imgAppIcon.setImageResource(android.R.drawable.sym_def_app_icon);
 		}
 
-		// Обработка переключения ползунка
 		holder.switchNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
-				app.setNotificationEnable(isChecked);
-				// Сохраняем значение: ключ — имя пакета (оно уникально), значение — статус true/false
-				sharedPreferences.edit()
-						.putBoolean(app.getPackageName(), isChecked)
-						.apply();
+			app.setNotificationEnable(isChecked);
+
+			// Сохраняем статус: ключ — просто имя пакета
+			sharedPreferences.edit()
+					.putBoolean(app.getPackageName(), isChecked)
+					.apply();
 		});
-
-
 	}
 
 	@Override

@@ -7,6 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 	private static final String TAG = "DatabaseHelper";
 
@@ -90,5 +93,60 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		cursor.close();
 		Log.d(TAG, "=================================");
 	}
+
+	/**
+	 * Метод для получения уведомлений конкретного приложения
+	 */
+	public List<NotificBD> getNotificationsByPackage(String packageName) {
+		List<NotificBD> list = new ArrayList<>();
+		SQLiteDatabase db = this.getReadableDatabase();
+
+		// Запрос с условием WHERE по имени пакета. Сортировка от новых к старым.
+		Cursor cursor = db.query(
+				TABLE_NAME,
+				null,
+				COLUMN_PACKAGE + " = ?",
+				new String[]{packageName},
+				null, null,
+				COLUMN_ID + " DESC"
+		);
+
+		if (cursor.moveToFirst()) {
+			do {
+				String pkg = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE));
+				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
+				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
+
+				// Предполагается, что у вашего класса NotificBD конструктор принимает: (package, text, title)
+				// согласно вашему коду в NotificationCatcherService
+				list.add(new NotificBD(pkg, text, title));
+			} while (cursor.moveToNext());
+		}
+		cursor.close();
+		return list;
+	}
+
+	/**
+	 * Метод для получения вообще всех сохраненных уведомлений
+	 */
+	public List<NotificBD> getAllNotifications() {
+		List<NotificBD> list = new ArrayList<>();
+		SQLiteDatabase db = this.getReadableDatabase();
+
+		Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null, COLUMN_ID + " DESC");
+
+		if (cursor.moveToFirst()) {
+			do {
+				String pkg = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE));
+				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
+				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
+
+				list.add(new NotificBD(pkg, text, title));
+			} while (cursor.moveToNext());
+		}
+		cursor.close();
+		return list;
+	}
+
 
 }

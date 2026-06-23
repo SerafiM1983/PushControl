@@ -1,16 +1,14 @@
 package com.example.pushcontrol.ui.settings;
 
-import static com.example.pushcontrol.Constans.PreferencesConstants.*;
+import static com.example.pushcontrol.Constans.PreferencesConstants.*; // Импортируем вашу константу имени настроек
 
-import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
-
+import android.graphics.drawable.Drawable;
 import androidx.core.app.NotificationManagerCompat;
-
+import com.example.pushcontrol.ui.settings.AppModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,48 +16,34 @@ public class ListPush {
 
 	public List<AppModel> getAppsWithNotifications(Context context) {
 		PackageManager packageManager = context.getPackageManager();
-		// Получаем список всех установленныъ приложений
-		SharedPreferences prefs = context
-				.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
 
-		List<ApplicationInfo> installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+		// Считываем настройки по вашей константе
+		SharedPreferences prefs = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
 		List<AppModel> allowedAppsList = new ArrayList<>();
 
+		// Получаем все установленные приложения в системе
+		List<ApplicationInfo> installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+
 		for (ApplicationInfo appInfo : installedApps) {
-			// Исключаем системные процессы, проверяем только пользовательские
+			// Отсекаем системные процессы, берем только пользовательские приложения
 			if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
 				String appName = appInfo.loadLabel(packageManager).toString();
 				String packageName = appInfo.packageName;
 
-				// 1. Получаем реальный системный статус уведомлений на данный момент
+				// Получаем базовый статус уведомлений
 				boolean systemEnable = NotificationManagerCompat.from(context).areNotificationsEnabled();
 
-				// 2. Проверяем, сохранял ли пользователь свой выбор ранее.
-				// Если настроек нет, по умолчанию возвращаем системное значение (systemEnabled)
+				// ИСПРАВЛЕНО: Читаем строго по простому packageName, как в вашем AppsAdapter!
 				boolean isNotificationsEnable = prefs.getBoolean(packageName, systemEnable);
 
-				allowedAppsList.add(new AppModel(appName, packageName, appInfo.loadIcon(packageManager), isNotificationsEnable));
+				// Подгружаем иконку приложения
+				Drawable icon = appInfo.loadIcon(packageManager);
+
+				// Добавляем в список. Передаем appInfo.uid третьим параметром для совместимости с вашей моделью
+				allowedAppsList.add(new AppModel(appName, packageName, appInfo.uid, icon, isNotificationsEnable));
 			}
 		}
-		return  allowedAppsList;
-	}
-
-	// помогательный метод для проверки разрешения для конкретного пакета
-	private boolean isNotificationPermissionGrantedApp(Context context, String packageName) {
-		try {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-				// Для Android 13+ проверяем стиатус конкретного разрешения POST_NOTIFICATIONS
-				PackageManager pm = context.getPackageManager();
-				int hasPermissio = pm.checkPermission(Manifest.permission.POST_NOTIFICATIONS, packageName);
-				return hasPermissio == PackageManager.PERMISSION_GRANTED;
-			} else {
-				// Для старых версий Android по умолчанию разрешено, если пользователь не отключил вручную
-				return NotificationManagerCompat.from(context).areNotificationsEnabled();
-			}
-		} catch (Exception e) {
-			// Добавить обработку
-			return false;
-		}
-
+		return allowedAppsList;
 	}
 }
+

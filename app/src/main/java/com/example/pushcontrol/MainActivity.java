@@ -1,11 +1,20 @@
 package com.example.pushcontrol;
 
+import static com.example.pushcontrol.Constans.PreferencesConstants.*;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.media.audiofx.Equalizer;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -23,23 +32,31 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.pushcontrol.databinding.ActivityMainBinding;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 	private static final int ENABLE_NOTIFICATION_LISTENER = 1;
 
 	private AppBarConfiguration mAppBarConfiguration;
 	private ActivityMainBinding binding;
 	private NotificationReceiver notificationReceiver;
+	private boolean isReceiverRegistered = false; // Флаг отслеживания регистрации
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		// Проверка доступа к уведомлениям перенесена ниже метода setContentView
-		checkNotificationListenerPermission();
 
+
+		// Отключает принудительное перекрашивание иконок в один цвет
 		binding = ActivityMainBinding.inflate(getLayoutInflater());
 		setContentView(binding.getRoot());
 
+		// Проверка доступа к уведомлениям перенесена ниже метода setContentView
+		checkNotificationListenerPermission();
+
+		binding.navView.setItemIconTintList(null);
 		setSupportActionBar(binding.appBarMain.toolbar);
 		binding.appBarMain.fab.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -50,7 +67,21 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 		DrawerLayout drawer = binding.drawerLayout;
+
+		// Добавляем слушатель состояния шторки
+		drawer.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+			@Override
+			public void onDrawerOpened(View drawerView) {
+				super.onDrawerOpened(drawerView);
+				// Обновляем список приложений каждый раз, когда пользователь открывает шторку
+				updateDrawerWithSelectedApps();
+			}
+		});
+
 		NavigationView navigationView = binding.navView;
+
+
+
 		// Passing each menu ID as a set of Ids because each
 		// menu should be considered as top level destinations.
 		mAppBarConfiguration = new AppBarConfiguration.Builder(
@@ -61,18 +92,112 @@ public class MainActivity extends AppCompatActivity {
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
 		NavigationUI.setupWithNavController(navigationView, navController);
 
+		navigationView.setNavigationItemSelectedListener(item -> {
+			Intent intent = item.getIntent();
+			// Проверяем что интент существует и содержит имя пакета приложения
+			if (intent != null && intent.hasExtra(packageName)) {
+				String clickedPackage = intent.getStringExtra(packageName);
+
+				// Упаковка имя пакета в Bundle для передачи во фрагмент
+				Bundle bundle = new Bundle();
+				bundle.putString(selectedPackage, clickedPackage);
+
+				// Открываем фрагмент через NavController и передаем ему bundle.
+				// R.id.nav_home — это ID вашего HomeFragment в nav_graph.xml.
+				navController.navigate(R.id.nav_home, bundle);
+
+				// Закрываем боковую шторку меню
+				drawer.closeDrawers();
+				return true;
+			}
+			// Для стандартных пунктов меню (если они остались) используем стандартную навигацию
+			boolean handled = NavigationUI.onNavDestinationSelected(item, navController);
+			if (handled) drawer.closeDrawers();
+			return handled;
+		});
+
 		// Инициализируем приемник бродкастов от нашего сервиса
 		notificationReceiver = new NotificationReceiver();
+	}
+
+	private void updateDrawerWithSelectedApps() {
+		if (binding == null || binding.navView == null) return;
+
+		NavigationView navigationView = binding.navView;
+		Menu menu = navigationView.getMenu();
+
+		// Очищаем старую группу перед добавлением, чтобы пункты не дублировались
+		menu.removeGroup(R.id.dynamic_apps_croup);
+
+		PackageManager pm = getPackageManager();
+
+		// Используем ваше имя файла настроек из PreferencesConstants
+		SharedPreferences prefs = getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
+
+		// Получаем список только установленных пользователем приложений
+		List<ApplicationInfo> installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+		int itemId = 1000;
+
+		for (ApplicationInfo appInfo : installedApps) {
+			if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+
+				// Читаем статус: ключ — строго packageName приложения
+				boolean isSelected = prefs.getBoolean(appInfo.packageName, false);
+
+				if (isSelected) {
+					String appName = appInfo.loadLabel(pm).toString();
+					try {
+						Drawable icon = pm.getApplicationIcon(appInfo.packageName);
+
+						// Добавляем пункт в шторку
+						MenuItem item = menu.add(R.id.dynamic_apps_croup, itemId, Menu.NONE, appName);
+						item.setIcon(icon);
+
+						// ПередаемpackageName через вашу константу
+						Intent intent = new Intent();
+						intent.putExtra(packageName, appInfo.packageName);
+						item.setIntent(intent);
+
+						itemId++;
+					} catch (PackageManager.NameNotFoundException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
+		// Проверяем, что ресивер создан и ЕЩЕ НЕ зарегистрирован
+		if (notificationReceiver != null && !isReceiverRegistered) {
+			IntentFilter filter = new IntentFilter("NOTIFICATION_RECEIVED");
+
+			// Регистрируем приемник
+			registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+			isReceiverRegistered = true; // Поднимаем флаг
+		}
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		// Обязательно отписываемся от приемника, чтобы избежать утечек памяти
-		if (notificationReceiver != null) {
-			unregisterReceiver(notificationReceiver);
+
+		// Отписываемся ТОЛЬКО если флаг равен true (приемник действительно зарегистрирован)
+		if (notificationReceiver != null && isReceiverRegistered) {
+			try {
+				unregisterReceiver(notificationReceiver);
+			} catch (IllegalArgumentException e) {
+				// На всякий случай гасим непредвиденную ошибку системы
+				Log.e("MainActivity", "Ошибка при отписке ресивера: " + e.getMessage());
+			}
+			isReceiverRegistered = false; // Сбрасываем флаг
 		}
 	}
+
 
 	private void checkNotificationListenerPermission() {
 		if (!isNotificationListenerEnabled()) {

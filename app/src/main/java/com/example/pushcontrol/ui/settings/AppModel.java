@@ -5,8 +5,26 @@ import android.graphics.drawable.Drawable;
 public class AppModel {
 	private String appName;
 	private String packageName;
+	private int uid; // Добавили поле UID для поддержки контейнеров Knox
 	private Drawable appIcon;
-	boolean isNotificationEnable;
+	private boolean isNotificationEnable;
+
+	// Обновленный конструктор: теперь принимает uid пятым параметром
+	public AppModel(String appName, String packageName, int uid, Drawable appIcon, boolean isNotificationEnable) {
+		this.appName = appName;
+		this.packageName = packageName;
+		this.uid = uid;
+		this.appIcon = appIcon;
+		this.isNotificationEnable = isNotificationEnable;
+	}
+
+	public int getUid() {
+		return uid;
+	}
+
+	public void setUid(int uid) {
+		this.uid = uid;
+	}
 
 	public boolean isNotificationEnable() {
 		return isNotificationEnable;
@@ -14,13 +32,6 @@ public class AppModel {
 
 	public void setNotificationEnable(boolean notificationEnable) {
 		isNotificationEnable = notificationEnable;
-	}
-
-	public AppModel(String appName, String packageName, Drawable appIcon, Boolean isNotificationEnable) {
-		this.appName = appName;
-		this.packageName = packageName;
-		this.appIcon = appIcon;
-		this.isNotificationEnable = isNotificationEnable;
 	}
 
 	public String getAppName() {
@@ -47,3 +58,4 @@ public class AppModel {
 		this.appIcon = appIcon;
 	}
 }
+
