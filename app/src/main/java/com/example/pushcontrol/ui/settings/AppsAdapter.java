@@ -1,6 +1,9 @@
 package com.example.pushcontrol.ui.settings;
 
+import static com.example.pushcontrol.Constans.PreferencesConstants.*;
+
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
@@ -13,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.pushcontrol.Constans.PreferencesConstants;
 import com.example.pushcontrol.R;
 
 import java.util.List;
@@ -20,10 +24,12 @@ import java.util.List;
 public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder> {
 	private final List<AppModel> appsList;
 	private final PackageManager packageManager;
+	private final SharedPreferences sharedPreferences;
 
 	public AppsAdapter(Context context, List<AppModel> appsList) {
 		this.appsList = appsList;
 		this.packageManager = context.getPackageManager();
+		this.sharedPreferences = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
 	}
 
 	@NonNull
@@ -53,8 +59,14 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 		}
 
 		// Обработка переключения ползунка
-		holder.switchNotification.setOnCheckedChangeListener((buttonView, isChecked) ->
-				app.setNotificationEnable(isChecked));
+		holder.switchNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
+				app.setNotificationEnable(isChecked);
+				// Сохраняем значение: ключ — имя пакета (оно уникально), значение — статус true/false
+				sharedPreferences.edit()
+						.putBoolean(app.getPackageName(), isChecked)
+						.apply();
+		});
+
 
 	}
 

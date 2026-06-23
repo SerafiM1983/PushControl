@@ -1,13 +1,17 @@
 package com.example.pushcontrol.NotificationControl;
 
+import static com.example.pushcontrol.Constans.PreferencesConstants.*;
+
 import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
-import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
+
+import androidx.core.app.NotificationManagerCompat;
 
 import com.example.pushcontrol.DataBaze.DatabaseHelper;
 import com.example.pushcontrol.DataBaze.NotificBD;
@@ -37,8 +41,13 @@ public class NotificationCatcherService extends NotificationListenerService {
 			}
 		}
 
+		// Инициализирую SharedPreferencesс с тем же именем
+		SharedPreferences prefs = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
+		boolean systemEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled();
+		boolean iaAllowedByUser = prefs.getBoolean(packageName, systemEnabled);
+
 		// Если макс или телега или вотсап
-		if ("ru.oneme.app".equals(packageName) || "org.telegram.messenger".equals(packageName)) {
+		if (iaAllowedByUser) {
 			// Здесь можно производить манипуляции с данными
 			try {
 				DatabaseHelper dbHelper = new DatabaseHelper(context);
@@ -48,9 +57,8 @@ public class NotificationCatcherService extends NotificationListenerService {
 			} catch (Exception e) {
 				Log.d(TAG, "Не удалось записать данные в SQLite: " + e.getMessage());
 			}
-
+			handleNotification(packageName, title, text);
 		}
-		handleNotification(packageName, title, text);
 	}
 
 	@Override
@@ -62,7 +70,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 		// Например отправить через BroadcastReceiver в мою Activity
 		Intent intent = new Intent("NOTIFICATION_RECEIVED");
 		intent.putExtra("package", packageName);
-		intent.putExtra("titile", title);
+		intent.putExtra("title", title);
 		intent.putExtra("text", text);
 		sendBroadcast(intent);
 	}

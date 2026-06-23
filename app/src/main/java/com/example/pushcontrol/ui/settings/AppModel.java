@@ -16,11 +16,11 @@ public class AppModel {
 		isNotificationEnable = notificationEnable;
 	}
 
-	public AppModel(String appName, String packageName, Drawable appIcon) {
+	public AppModel(String appName, String packageName, Drawable appIcon, Boolean isNotificationEnable) {
 		this.appName = appName;
 		this.packageName = packageName;
 		this.appIcon = appIcon;
-		isNotificationEnable = false;
+		this.isNotificationEnable = isNotificationEnable;
 	}
 
 	public String getAppName() {
