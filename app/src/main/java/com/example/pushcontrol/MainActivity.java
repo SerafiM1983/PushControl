@@ -19,10 +19,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
 
+import com.example.pushcontrol.ui.home.HomeFragment;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -91,16 +94,27 @@ public class MainActivity extends AppCompatActivity {
 		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
 		NavigationUI.setupWithNavController(navigationView, navController);
+		if (getSupportActionBar() != null) {
+			getSupportActionBar().setTitle("Общая Лента");
+		}
 
 		navigationView.setNavigationItemSelectedListener(item -> {
 			Intent intent = item.getIntent();
 			// Проверяем что интент существует и содержит имя пакета приложения
 			if (intent != null && intent.hasExtra(packageName)) {
 				String clickedPackage = intent.getStringExtra(packageName);
+				String appNameTitle = intent.getStringExtra(selectedAppName);
 
 				// Упаковка имя пакета в Bundle для передачи во фрагмент
 				Bundle bundle = new Bundle();
 				bundle.putString(selectedPackage, clickedPackage);
+				bundle.putString(selectedAppName, appNameTitle);
+
+				// НАСТРОЙКА: Очищаем стек, чтобы новые экраны заменяли старые, а не наслаивались друг на друга
+				androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+						.setPopUpTo(R.id.nav_home, true) // Принудительно вычищаем прошлый nav_home из стека
+						.setLaunchSingleTop(true)
+						.build();
 
 				// Открываем фрагмент через NavController и передаем ему bundle.
 				// R.id.nav_home — это ID вашего HomeFragment в nav_graph.xml.
@@ -118,6 +132,40 @@ public class MainActivity extends AppCompatActivity {
 
 		// Инициализируем приемник бродкастов от нашего сервиса
 		notificationReceiver = new NotificationReceiver();
+
+			// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ ВАШЕГО ПРОЕКТА
+		// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ JETPACK NAVIGATION
+		getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				// Проверяем аргументы текущего экрана прямо через NavController
+				Bundle currentArgs = navController.getCurrentBackStackEntry() != null ?
+						navController.getCurrentBackStackEntry().getArguments() : null;
+
+				// Если аргументы есть и там есть ключ выбранного пакета — значит мы в чате программы
+				if (currentArgs != null && currentArgs.containsKey(selectedPackage)) {
+
+					// Настройка навигации для возврата: полностью чистим историю
+					androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+							.setPopUpTo(R.id.nav_home, true)
+							.build();
+
+					// Открываем nav_home БЕЗ параметров (это вернет нас на "Общую Ленту")
+					navController.navigate(R.id.nav_home, null, navOptions);
+
+					// После возврата на Главную принудительно возвращаем заголовок
+					if (getSupportActionBar() != null) {
+						getSupportActionBar().setTitle("Общая Лента");
+					}
+				} else {
+					// Если мы уже на Общей ленте (аргументов нет) — закрываем приложение
+					setEnabled(false); // Отключаем колбэк, чтобы избежать бесконечного цикла
+					getOnBackPressedDispatcher().onBackPressed(); // Закрываем Activity
+				}
+			}
+		});
+
+
 	}
 
 	private void updateDrawerWithSelectedApps() {
@@ -156,7 +204,9 @@ public class MainActivity extends AppCompatActivity {
 						// ПередаемpackageName через вашу константу
 						Intent intent = new Intent();
 						intent.putExtra(packageName, appInfo.packageName);
+						intent.putExtra(selectedAppName, appName);
 						item.setIntent(intent);
+						Log.d("TITLE", "Titlt = " + appName);
 
 						itemId++;
 					} catch (PackageManager.NameNotFoundException e) {
@@ -262,6 +312,5 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
-
 
 }

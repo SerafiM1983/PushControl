@@ -5,4 +5,13 @@
         android:id="@+id/nav_settings"
         android:title="Настройки приложений"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_clear_chat"
+        android:title="Очистить чат"
+        app:showAsAction="never" /> <!-- Будет прятаться в "трех точках" -->
+
+    <item
+        android:id="@+id/action_clear_all"
+        android:title="Очистить все"
+        app:showAsAction="never" />
 </menu>

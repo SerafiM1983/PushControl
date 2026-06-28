@@ -116,10 +116,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				String pkg = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE));
 				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
 				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
-
-				// Предполагается, что у вашего класса NotificBD конструктор принимает: (package, text, title)
-				// согласно вашему коду в NotificationCatcherService
-				list.add(new NotificBD(pkg, text, title));
+				Long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
+				list.add(new NotificBD(pkg, text, title, id));
 			} while (cursor.moveToNext());
 		}
 		cursor.close();
@@ -140,13 +138,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				String pkg = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE));
 				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
 				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
-
-				list.add(new NotificBD(pkg, text, title));
+				Long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
+				list.add(new NotificBD(pkg, text, title, id));
 			} while (cursor.moveToNext());
 		}
 		cursor.close();
 		return list;
 	}
 
+	/**
+	 * Метод для удаления
+	 */
+	public void deleteItem(long id) {
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.delete(TABLE_NAME, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
+		db.close();
+	}
+
+	// Удалить абсолютно все уведомления из таблицы
+	public void clearAllNotifications() {
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.delete(TABLE_NAME, null, null);
+		db.close();
+	}
+
+	// Удалить уведомления только конкретного приложения
+	public void clearNotificationsByPackage(String packageName) {
+		Log.d("DB_DELL", "packageName = " + packageName);
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.delete(TABLE_NAME,  COLUMN_PACKAGE + " = ?", new String[]{packageName});
+		db.close();
+	}
 
 }

@@ -37,6 +37,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 		return notifications.size();
 	}
 
+	// Этот метод вызовет активити при свайпе чтобы получить что удалять
+	public NotificBD getItemAt(int position) {
+		return  notifications.get(position);
+	}
+
+	// Этот метод удалит элемент с экрана
+	public void removeItem(int position) {
+		notifications.remove(position);
+		notifyItemRemoved(position);
+		// Здесь можно удалить из базы наверное
+	}
+
 	public static class NotifViewHolder extends RecyclerView.ViewHolder {
 		TextView tvTitle, tvText;
 
