@@ -70,12 +70,12 @@ public class HomeFragment extends Fragment {
 
 		DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
 		List<NotificBD> notificationList;
+		NotificationsAdapter adapter;
 
 		// Проверяем пришли ли аргументы из боковой панели
 		if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
 			String pascageName = getArguments().getString(selectedPackage);
 			String appNameTitle = getArguments().getString(selectedAppName);
-			Log.d("TITLE","Title = " + appNameTitle);
 
 			// УСТАНАВЛИВАЕМ НАЗВАНИЕ ПРОГРАММЫ
 			if (requireActivity().getActionBar() != null) {
@@ -86,6 +86,7 @@ public class HomeFragment extends Fragment {
 
 			// Загружаем пуши только для кликнутой программы
 			notificationList = dbHelper.getNotificationsByPackage(pascageName);
+			adapter = new NotificationsAdapter(notificationList, false);
 		} else {
 			// ЕСЛИ АРГУМЕНТОВ НЕТ — СТАВИМ ЗАГЛОВОК «ОБЩАЯ ЛЕНТА»
 			// Если открыли приложение просто так - вернуть стандартный заголовок общей ленты
@@ -96,11 +97,9 @@ public class HomeFragment extends Fragment {
 			// Если открыли приложение просто так - показать общую ленту
 			//requireActivity().getActionBar().setTitle("Общая лента");
 			notificationList = dbHelper.getAllNotifications();
+			adapter = new NotificationsAdapter(notificationList, true);
 		}
 
-
-		// Передаю данные в адаптер и вывожу на экран
-		NotificationsAdapter adapter = new NotificationsAdapter(notificationList);
 		binding.rvNotifications.setAdapter(adapter);
 		// Создаем стандартный вертикальный разделитель
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(

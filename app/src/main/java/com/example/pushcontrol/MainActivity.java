@@ -15,7 +15,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 
@@ -25,8 +27,11 @@ import com.google.android.material.navigation.NavigationView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.view.GravityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -39,7 +44,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 	private static final int ENABLE_NOTIFICATION_LISTENER = 1;
-
+	private GestureDetector globalToolbarDetector;
 	private AppBarConfiguration mAppBarConfiguration;
 	private ActivityMainBinding binding;
 	private NotificationReceiver notificationReceiver;
@@ -50,8 +55,6 @@ public class MainActivity extends AppCompatActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-
-
 		// Отключает принудительное перекрашивание иконок в один цвет
 		binding = ActivityMainBinding.inflate(getLayoutInflater());
 		setContentView(binding.getRoot());
@@ -61,14 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
 		binding.navView.setItemIconTintList(null);
 		setSupportActionBar(binding.appBarMain.toolbar);
-		binding.appBarMain.fab.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-						.setAction("Action", null)
-						.setAnchorView(R.id.fab).show();
-			}
-		});
+
 		DrawerLayout drawer = binding.drawerLayout;
 
 		// Добавляем слушатель состояния шторки
@@ -92,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
 				.setOpenableLayout(drawer)
 				.build();
 		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+
+
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
 		NavigationUI.setupWithNavController(navigationView, navController);
 		if (getSupportActionBar() != null) {
@@ -118,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
 				// Открываем фрагмент через NavController и передаем ему bundle.
 				// R.id.nav_home — это ID вашего HomeFragment в nav_graph.xml.
-				navController.navigate(R.id.nav_home, bundle);
+				navController.navigate(R.id.nav_home, bundle, navOptions);
 
 				// Закрываем боковую шторку меню
 				drawer.closeDrawers();
@@ -164,8 +162,6 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		});
-
-
 	}
 
 	private void updateDrawerWithSelectedApps() {
@@ -312,5 +308,4 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
-
 }

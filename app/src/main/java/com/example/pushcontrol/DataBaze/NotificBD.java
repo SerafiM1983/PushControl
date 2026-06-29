@@ -4,19 +4,22 @@ public class NotificBD {
 	private String title;
 	private String text;
 	private String packageName;
+	private byte[] image;
 	long id;
 
-	public NotificBD(String packageName, String text, String title, Long id) {
+	public NotificBD(String packageName, String text, String title, byte[] image, long id) {
 		this.packageName = packageName;
 		this.text = text;
 		this.title = title;
+		this.image = image;
 		this.id = id;
 	}
-	public NotificBD(String packageName, String text, String title) {
+	public NotificBD(String packageName, String text, String title, byte[] image) {
 		this.packageName = packageName;
 		this.text = text;
 		this.title = title;
-		this.id = 0; // Для новых записей ID временно равен 0, база данных сама заменит его на правильный
+		this.image = image;
+		this.id = 0;
 	}
 
 	public String getTitle() {
@@ -49,5 +52,12 @@ public class NotificBD {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public byte[] getImage() {
+		return image;
+	}
+	public void setImage(byte[] image) {
+		this.image = image;
 	}
 }

@@ -15,7 +15,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	// Настройки базы данных
 	private static final String DATABASE_NAME = "notifications.db";
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 2;
 
 	// Названия таблицы и столбцов
 	public static final String TABLE_NAME = "captured_notifications";
@@ -24,6 +24,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	public static final String COLUMN_TITLE = "title";
 	public static final String COLUMN_TEXT = "text";
 	public static final String COLUMN_TIMESTAMP = "timestamp";
+	public static final String COLUMN_IMAGE = "notification_image";
 
 	// SQL-запрос для создания таблицы
 	private static final String TABLE_CREATE =
@@ -32,7 +33,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					COLUMN_PACKAGE + " TEXT, " +
 					COLUMN_TITLE + " TEXT, " +
 					COLUMN_TEXT + " TEXT, " +
-					COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP" +
+					COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+					COLUMN_IMAGE + " BLOB" +
 					");";
 
 	public DatabaseHelper(Context context) {
@@ -46,9 +48,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-		onCreate(db);
+		// Проверяем: если старая версия была 1, а новая стала 2 (или выше)
+		if (oldVersion < 2) {
+			try {
+				// Безопасно добавляем новую колонку COLUMN_IMAGE с типом BLOB
+				// У старых записей в этой колонке автоматически появится значение NULL
+				db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COLUMN_IMAGE + " BLOB;");
+			} catch (Exception e) {
+				// Если что-то пошло не так, пишем в лог, чтобы приложение не упало
+				Log.e("DB_UPGRADE", "Ошибка при добавлении колонки картинок: " + e.getMessage());
+			}
+		}
+
+		// Если в будущем (в версии 3, 4 и т.д.) потребуется добавить ещё колонки,
+		// вы просто допишете сюда новые блоки if (oldVersion < 3) и т.д.
 	}
+
 
 	/**
 	 * Метод для сохранения уведомления в базу данных
@@ -62,6 +77,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		values.put(COLUMN_PACKAGE, push.getPackageName());
 		values.put(COLUMN_TITLE, push.getTitle());
 		values.put(COLUMN_TEXT, push.getText());
+		values.put(COLUMN_IMAGE,push.getImage());
 
 		// Вставляем строку в таблицу
 		long newRowId = db.insert(TABLE_NAME, null, values);
@@ -117,7 +133,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
 				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
 				Long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
-				list.add(new NotificBD(pkg, text, title, id));
+				byte[] image = cursor.getBlob(cursor.getColumnIndexOrThrow(COLUMN_IMAGE));
+
+				list.add(new NotificBD(pkg, text, title, image, id));
 			} while (cursor.moveToNext());
 		}
 		cursor.close();
@@ -139,7 +157,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
 				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
 				Long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
-				list.add(new NotificBD(pkg, text, title, id));
+				byte[] image = cursor.getBlob(cursor.getColumnIndexOrThrow(COLUMN_IMAGE));
+				list.add(new NotificBD(pkg, text, title, image, id));
 			} while (cursor.moveToNext());
 		}
 		cursor.close();

@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:id="@+id/llAppImageAppName"
+        android:layout_marginBottom="10dp">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/appIconTitle"/>
+        <TextView
+            android:id="@+id/appNameTitle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal|center_vertical"
+            android:text="Text"
+            android:textSize="20sp"/>
+    </LinearLayout>
+
 
     <!-- Заголовок уведомления (Имя контакта / Группы) -->
     <TextView
@@ -22,5 +42,15 @@
         android:layout_marginTop="4dp"
         android:textSize="14sp"
         android:textColor="#666666"/>
+
+    <ImageView
+        android:id="@+id/img_notification_attachment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:maxHeight="200dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:layout_marginTop="8dp" />
 
 </LinearLayout>
