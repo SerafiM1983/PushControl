@@ -86,6 +86,9 @@ public class HomeFragment extends Fragment {
 
 			// Загружаем пуши только для кликнутой программы
 			notificationList = dbHelper.getNotificationsByPackage(pascageName);
+			Log.d("HomeFragment","size = " + notificationList.size());
+			Log.d("HomeFragment","Object = " + notificationList.toString());
+
 			adapter = new NotificationsAdapter(notificationList, false);
 		} else {
 			// ЕСЛИ АРГУМЕНТОВ НЕТ — СТАВИМ ЗАГЛОВОК «ОБЩАЯ ЛЕНТА»

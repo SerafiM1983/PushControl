@@ -38,10 +38,17 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 	@Override
 	public void onBindViewHolder(@NonNull NotifViewHolder holder, int position) {
 		NotificBD notif = notifications.get(position);
+		// АБСОЛЮТНЫЙ СБРОС СОСТОЯНИЯ ЯЧЕЙКИ (Защита от багов переиспользования)
+		holder.imgAttachment.setImageBitmap(null);
+		holder.imgAttachment.setVisibility(View.GONE);
+		holder.imageApp.setImageDrawable(null);
+		holder.ll.setVisibility(View.GONE);
+
+		// Заполнение базовых полей
 		holder.tvTitle.setText(notif.getTitle());
 		holder.tvText.setText(notif.getText());
 
-		// сли это общяя лента показываем иконку и имя источника
+		// если это общяя лента показываем иконку и имя источника
 		if (isGeneralFeed) {
 			holder.ll.setVisibility(View.VISIBLE);
 			holder.imgAttachment.setVisibility(View.GONE);

@@ -93,8 +93,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null, COLUMN_ID + " DESC");
 
-		Log.d(TAG, "=== ВСЕГО ЗАПИСЕЙ В БАЗЕ: " + cursor.getCount() + " ===");
-
 		if (cursor.moveToFirst()) {
 			do {
 				int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
@@ -106,7 +104,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				Log.d(TAG, "ID: " + id + " | " + time + " | Пакет: " + pkg + " | [" + title + "] " + text);
 			} while (cursor.moveToNext());
 		}
+		Log.d(TAG, "=== ВСЕГО ЗАПИСЕЙ В БАЗЕ: " + cursor.getCount() + " ===");
+
 		cursor.close();
+
 		Log.d(TAG, "=================================");
 	}
 

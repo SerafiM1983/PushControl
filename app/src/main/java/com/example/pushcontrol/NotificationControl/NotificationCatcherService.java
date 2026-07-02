@@ -39,6 +39,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
 				Bundle extras = sbn.getNotification().extras;
+				inspectBundle(extras, "Notification(" + sbn.getPackageName() + ")");
 				title = extras.getString(Notification.EXTRA_TITLE, "");
 
 				// Используем getCharSequence и приведение к строке, так как некоторые приложения (например, WhatsApp)
@@ -51,23 +52,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 					if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
 						Bundle extrasBuilde = sbn.getNotification().extras;
 
-						// 1. Проверяем стандартный ключ большого баннера (например, скриншоты системы или реклама)
-						if (extrasBuilde.containsKey(Notification.EXTRA_PICTURE)) {
-							Bitmap bitmap = (Bitmap) extrasBuilde.get(Notification.EXTRA_PICTURE);
-							if (bitmap != null) {
-								imageBytes = bitmapToByteArray(bitmap);
-							}
-						}
-						// 2. Альтернативный скрытый ключ для развернутых фото в некоторых версиях приложений
-						else if (extrasBuilde.containsKey("android.picture")) {
-							Object pictureObj = extrasBuilde.get("android.picture");
-							if (pictureObj instanceof Bitmap) {
-								imageBytes = bitmapToByteArray((Bitmap) pictureObj);
-							}
-						}
-
-						// 3. СПЕЦИАЛЬНО ДЛЯ TELEGRAM, WHATSAPP И VIBER (MessagingStyle)
-						// Если стандартные картинки пустые, значит фото спрятано внутри списка сообщений пуша
+						//  СПЕЦИАЛЬНО ДЛЯ TELEGRAM, WHATSAPP И VIBER (MessagingStyle)
 						if (imageBytes == null && extrasBuilde.containsKey(Notification.EXTRA_MESSAGES)) {
 							Parcelable[] messages = (Parcelable[]) extrasBuilde.get(Notification.EXTRA_MESSAGES);
 							if (messages != null && messages.length > 0) {
@@ -102,31 +87,8 @@ public class NotificationCatcherService extends NotificationListenerService {
 							}
 						}
 
-						// 4. РЕЗЕРВНЫЙ ВАРИАНТ: Если полноценной фотографии в пуше НЕТ (вам прислали просто ТЕКСТ),
-						// вот тогда мы берем круглую аватарку собеседника, чтобы пуш не оставался безликим
-						if (imageBytes == null) {
-							if (extrasBuilde.containsKey(Notification.EXTRA_LARGE_ICON)) {
-								Object largeIconObj = extrasBuilde.get(Notification.EXTRA_LARGE_ICON);
-								if (largeIconObj instanceof Bitmap) {
-									imageBytes = bitmapToByteArray((Bitmap) largeIconObj);
-								} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && largeIconObj instanceof android.graphics.drawable.Icon) {
-									try {
-										android.graphics.drawable.Icon icon = (android.graphics.drawable.Icon) largeIconObj;
-										Drawable drawable = icon.loadDrawable(context);
-										if (drawable instanceof android.graphics.drawable.BitmapDrawable) {
-											Bitmap bitmap = ((android.graphics.drawable.BitmapDrawable) drawable).getBitmap();
-											imageBytes = bitmapToByteArray(bitmap);
-										}
-									} catch (Exception e) {
-										Log.e(TAG, "Не удалось декодировать аватарку: " + e.getMessage());
-									}
-								}
-							}
-						}
-						// Проверяем, что пуш пришел именно от МАКС
 						// Проверяем, что пуш пришел именно от МАКС
 						if ("ru.oneme.app".equals(packageName)) {
-
 							// Сканируем массив android.messages (как показал ваш лог)
 							if (extras.containsKey(Notification.EXTRA_MESSAGES)) {
 								Parcelable[] messages = (Parcelable[]) extras.get(Notification.EXTRA_MESSAGES);
@@ -165,7 +127,8 @@ public class NotificationCatcherService extends NotificationListenerService {
 									}
 								}
 							}
-						} else {
+						}
+						else {
 							// Код для остальных приложений (Telegram, WhatsApp и т.д.)
 							if (extras.containsKey(Notification.EXTRA_PICTURE)) {
 								Bitmap bitmap = (Bitmap) extras.get(Notification.EXTRA_PICTURE);
@@ -176,11 +139,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 						}
 					}
 				}
-				// --- КОНЕЦ ПЕРЕХВАТА РЕАЛЬНОЙ ФОТОГРАФИИ ---
-
-
-
-				// Передаем imageBytes в конструктор (создадим его на следующем шаге)
 				push = new NotificBD(packageName, text, title, imageBytes);
 			}
 		}
@@ -192,6 +150,10 @@ public class NotificationCatcherService extends NotificationListenerService {
 		if (iaAllowedByUser) {
 			try {
 				DatabaseHelper dbHelper = new DatabaseHelper(context);
+				if (push.getTitle().isEmpty()) {
+					dbHelper.close();
+					return;
+				}
 				dbHelper.insertNotification(push); // Сюда уйдет объект уже с картинкой внутри
 				dbHelper.logAllNotifications();
 			} catch (Exception e) {

@@ -1,5 +1,7 @@
 package com.example.pushcontrol.DataBaze;
 
+import androidx.annotation.NonNull;
+
 public class NotificBD {
 	private String title;
 	private String text;
@@ -59,5 +61,17 @@ public class NotificBD {
 	}
 	public void setImage(byte[] image) {
 		this.image = image;
+	}
+
+	@NonNull
+	@Override
+	public String toString() {
+		return new String(
+				"title = " + title + "\n"
+				+ "text = " + text + "\n"
+				+ "packageName = " + packageName + "\n"
+				+ "id = " + id + "\n"
+				+ "image = " + java.util.Arrays.toString(image)
+		);
 	}
 }
