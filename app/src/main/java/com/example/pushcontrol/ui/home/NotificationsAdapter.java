@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.pushcontrol.DataBaze.NotificBD;
 import com.example.pushcontrol.R;
@@ -46,7 +47,21 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
 		// Заполнение базовых полей
 		holder.tvTitle.setText(notif.getTitle());
-		holder.tvText.setText(notif.getText());
+		String text = notif.getText();
+
+		if (text != null) {
+			String lowerText = text.toLowerCase(); // Защита от разного регистра (.MP4 / .mp4)
+
+			if (lowerText.contains("clip-") && lowerText.contains(".mp4") && lowerText.contains("screen_recording_")) {
+				// Строго клип VK: заменяем текст на красивую строку
+				holder.tvText.setText(holder.itemView.getContext().getString(R.string.loading_finish));
+			} else {
+				// Для всех остальных файлов .mp4 и обычных сообщений — выводим оригинальный текст
+				holder.tvText.setText(text);
+			}
+		} else {
+			holder.tvText.setText("");
+		}
 
 		// если это общяя лента показываем иконку и имя источника
 		if (isGeneralFeed) {
@@ -71,26 +86,33 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 				holder.imageApp.setImageResource(android.R.drawable.sym_def_app_icon);
 			}
 		} else {
-			// Обработка картинки из пуша
-			byte[] imageBytes = notif.getImage();
-			if (imageBytes != null && imageBytes.length > 0) {
-				// Декодируем массив обратно в картинку
-				Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-				if (bitmap != null) {
-					holder.imgAttachment.setVisibility(View.VISIBLE);
-					holder.imgAttachment.setImageBitmap(bitmap);
-				} else {
-					holder.imgAttachment.setVisibility(View.GONE);
-				}
+		// ВНУТРИ ЧАТА ПРОГРАММЫ
+		holder.ll.setVisibility(View.GONE); // Скрываем шапку приложения
+
+		byte[] imageBytes = notif.getImage();
+		String currentText = notif.getText();
+
+		// ЖЕЛЕЗНОЕ УСЛОВИЕ: Картинка показывается ТОЛЬКО если текст содержит маркер фото
+		if (imageBytes != null && imageBytes.length > 0 && currentText != null && currentText.contains("📷 фото")) {
+
+			Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+			if (bitmap != null) {
+				holder.imgAttachment.setVisibility(View.VISIBLE);
+				holder.imgAttachment.setImageBitmap(bitmap);
 			} else {
-				// Если картинки нет
+				// Защита от сбоя декодирования
+				holder.imgAttachment.setImageBitmap(null);
 				holder.imgAttachment.setVisibility(View.GONE);
 			}
-			// Если мы внутри чата программы
-			holder.ll.setVisibility(View.GONE);
+		} else {
+			// Для сообщения с текстом "Это официальная информация..."
+			// Мы ПРИНУДИТЕЛЬНО очищаем и скрываем ImageView, убирая дубликат картинки!
+			holder.imgAttachment.setImageBitmap(null);
+			holder.imgAttachment.setVisibility(View.GONE);
 		}
-
 	}
+
+}
 
 	@Override
 	public int getItemCount() {

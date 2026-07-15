@@ -19,11 +19,11 @@
     <!-- Окончательный рабочий стиль для выпадающего меню -->
     <style name="Theme.PushControl.PopupOverlay" parent="ThemeOverlay.AppCompat.Light">
         <!-- 1. Главный переключатель: меняем цвет всей поверхности Material-меню на КРАСНЫЙ -->
-        <item name="colorSurface">#FF0000</item>
+        <item name="colorSurface">#FFFFFF</item>
 
         <!-- 2. Меняем цвет текста и иконок на БЕЛЫЙ -->
-        <item name="colorOnSurface">#FFFFFF</item>
-        <item name="android:textColor">#FFFFFF</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="android:textColor">#000000</item>
 
         <!-- 3. Сбрасываем старые параметры, чтобы они не мешали -->
         <item name="android:itemBackground">@null</item>

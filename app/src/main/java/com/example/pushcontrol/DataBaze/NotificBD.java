@@ -8,7 +8,18 @@ public class NotificBD {
 	private String packageName;
 	private byte[] image;
 	long id;
+	private String serverId;
 
+
+
+	public NotificBD(String packageName, String text, String title, byte[] image, long id, String serverId) {
+		this.packageName = packageName;
+		this.text = text;
+		this.title = title;
+		this.image = image;
+		this.id = id;
+		this.serverId = serverId;
+	}
 	public NotificBD(String packageName, String text, String title, byte[] image, long id) {
 		this.packageName = packageName;
 		this.text = text;
@@ -16,11 +27,10 @@ public class NotificBD {
 		this.image = image;
 		this.id = id;
 	}
-	public NotificBD(String packageName, String text, String title, byte[] image) {
+	public NotificBD(String packageName, String text, String title) {
 		this.packageName = packageName;
 		this.text = text;
 		this.title = title;
-		this.image = image;
 		this.id = 0;
 	}
 
@@ -62,16 +72,23 @@ public class NotificBD {
 	public void setImage(byte[] image) {
 		this.image = image;
 	}
+	public String getServerId() {
+		return serverId;
+	}
 
+	public void setServerId(String serverId) {
+		this.serverId = serverId;
+	}
 	@NonNull
 	@Override
 	public String toString() {
+		int imgInt = (image != null) ? image.length : 0;
 		return new String(
 				"title = " + title + "\n"
 				+ "text = " + text + "\n"
 				+ "packageName = " + packageName + "\n"
 				+ "id = " + id + "\n"
-				+ "image = " + java.util.Arrays.toString(image)
+				+ "image = " +/* imgInt */ java.util.Arrays.toString(image)
 		);
 	}
 }

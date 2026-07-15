@@ -18,15 +18,21 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pushcontrol.R;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder> {
-	private final List<AppModel> appsList;
+	// Исходный список который не меняется
+	private List<AppModel> originalList;
+	// Текущий список, который отображается
+	private List<AppModel> currentList;
 	private final PackageManager packageManager;
 	private final SharedPreferences sharedPreferences;
 
 	public AppsAdapter(Context context, List<AppModel> appsList) {
-		this.appsList = appsList;
+		this.originalList = new ArrayList<>(appsList);
+		this.currentList = new ArrayList<>(appsList);
 		this.packageManager = context.getPackageManager();
 		this.sharedPreferences = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
 	}
@@ -41,7 +47,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 
 	@Override
 	public void onBindViewHolder(@NonNull AppsAdapter.AppViewHolder holder, int position) {
-		AppModel app = appsList.get(position);
+		AppModel app = currentList.get(position);
 
 		holder.tvAppName.setText(app.getAppName());
 
@@ -69,7 +75,25 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 
 	@Override
 	public int getItemCount() {
-		return appsList.size();
+		return currentList != null ? currentList.size() : 0;
+	}
+
+	// Метод поиска и фильртации
+	public void filter(String query) {
+		currentList.clear(); // Очищяем текущий список
+		if (query == null || query.isEmpty()) {
+			// Запрос пустой возвращяем все элементы
+			currentList.addAll(originalList);
+		} else {
+			String lowerCaseQuery = query.toLowerCase().trim();
+
+			for (AppModel item : originalList) {
+				if (item.getAppName() != null && item.getAppName().toLowerCase().contains(lowerCaseQuery)) {
+					currentList.add(item);
+				}
+			}
+		}
+		notifyDataSetChanged();
 	}
 
 	public static class AppViewHolder extends RecyclerView.ViewHolder {

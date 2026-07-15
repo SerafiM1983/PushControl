@@ -2,6 +2,10 @@ package com.example.pushcontrol.ui.home;
 
 import static com.example.pushcontrol.Constans.PreferencesConstants.*;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -39,6 +43,12 @@ import java.util.List;
 
 public class HomeFragment extends Fragment {
 	private final String TAG = "AdRequest";
+	private boolean isGeneralFeed = false;
+	private NotificationsAdapter adapter;
+	private List<NotificBD> notificationList;
+	private NotificationReceiver notificationReceiver;
+
+
 
 	private FragmentHomeBinding binding;
 
@@ -69,8 +79,6 @@ public class HomeFragment extends Fragment {
 		binding.rvNotifications.setLayoutManager(new LinearLayoutManager(requireContext()));
 
 		DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-		List<NotificBD> notificationList;
-		NotificationsAdapter adapter;
 
 		// Проверяем пришли ли аргументы из боковой панели
 		if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
@@ -86,8 +94,11 @@ public class HomeFragment extends Fragment {
 
 			// Загружаем пуши только для кликнутой программы
 			notificationList = dbHelper.getNotificationsByPackage(pascageName);
-			Log.d("HomeFragment","size = " + notificationList.size());
-			Log.d("HomeFragment","Object = " + notificationList.toString());
+			for (NotificBD notificBD : notificationList) {
+				Log.d(TAG, notificBD.toString());
+			}
+			//Log.d("HomeFragment","size = " + notificationList.size());
+			//Log.d("HomeFragment","Object = " + notificationList.toString());
 
 			adapter = new NotificationsAdapter(notificationList, false);
 		} else {
@@ -110,7 +121,7 @@ public class HomeFragment extends Fragment {
 				LinearLayoutManager.VERTICAL
 		);
 
-// Привязываем разделитель к вашему RecyclerView
+		// Привязываем разделитель к вашему RecyclerView
 		binding.rvNotifications.addItemDecoration(dividerItemDecoration);
 
 		// Настройка свайпа
@@ -199,18 +210,18 @@ public class HomeFragment extends Fragment {
 				menuInflater.inflate(R.menu.main, menu);
 
 				// 3. Строгая проверка: открыто конкретное приложение или общая лента
-				boolean isSpecificApp = false;
+
 				if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
 					String currentPkg = getArguments().getString(selectedPackage);
 					if (currentPkg != null && !currentPkg.trim().isEmpty()) {
-						isSpecificApp = true;
+						isGeneralFeed = true;
 					}
 				}
 
 				// 4. Управляем кнопкой "Очистить чат"
 				MenuItem clearChatEntry = menu.findItem(R.id.action_clear_chat);
 				if (clearChatEntry != null) {
-					clearChatEntry.setVisible(isSpecificApp); // Покажет ТОЛЬКО в чате программы
+					clearChatEntry.setVisible(isGeneralFeed); // Покажет ТОЛЬКО в чате программы
 					//menu.findItem(R.id.action_clear_all).setVisible(false);
 				}
 
@@ -265,8 +276,79 @@ public class HomeFragment extends Fragment {
 	}
 
 	@Override
+	public void onStart() {
+		super.onStart();
+		// 1. Создаем объект приёмника, если он еще не создан
+		if (notificationReceiver == null) {
+			notificationReceiver = new NotificationReceiver();
+		}
+		// 2. Настраиваем волну (Action), которую будем слушать
+		IntentFilter filter = new IntentFilter("NOTIFICATION_RECEIVED");
+
+		// 3. Регистрируем приёмник в контексте Activity
+		if (getActivity() != null) {
+			getActivity().registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+			Log.d(TAG, "Слушатель NotificationReceiver УСПЕШНО зарегистрирован в onStart");
+		}
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		// Обязательно отключаем приёмник при уходе с экрана (защита от утечек памяти)
+		if (getActivity() != null && notificationReceiver != null) {
+			getActivity().unregisterReceiver(notificationReceiver);
+			Log.d(TAG, "Слушатель NotificationReceiver отключен в onStop");
+		}
+	}
+
+
+	@Override
 	public void onDestroyView() {
 		super.onDestroyView();
 		binding = null;
+	}
+
+	// Внутренний класс для перехвата сообщений из NotificationCatcherService в реальном времени
+	private class NotificationReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG, "NotificationReceiver");
+			if (intent != null && "NOTIFICATION_RECEIVED".equals(intent.getAction())) {
+
+				// ЖЕЛЕЗНОЕ УСЛОВИЕ: Если это НЕ общая лента (пользователь сидит внутри чата),
+				// мы просто выходим из метода и ничего не добавляем на экран динамически.
+
+				if (isGeneralFeed) {
+					return;
+				}
+
+				String packageName = intent.getStringExtra("package");
+				String title = intent.getStringExtra("title");
+				String text = intent.getStringExtra("text");
+
+
+				// Создаем объект модели для вывода на экран
+				NotificBD newNotif = new NotificBD(packageName, text, title);
+
+				// Безопасно обновляем RecyclerView в главном потоке
+				if (getActivity() != null) {
+					getActivity().runOnUiThread(() -> {
+						// ИСПРАВЛЕНО: Используем правильные глобальные имена переменных класса HomeFragment
+						if (notificationList != null && adapter != null && binding != null) {
+
+							// Добавляем элемент в самый верх Общей ленты
+							notificationList.add(0, newNotif);
+
+							// Запускаем красивую анимацию появления новой карточки
+							adapter.notifyItemInserted(0);
+
+							// ИСПРАВЛЕНО: Скроллим правильный RecyclerView (rvNotifications) к самому первому элементу
+							binding.rvNotifications.scrollToPosition(0);
+						}
+					});
+				}
+			}
+		}
 	}
 }

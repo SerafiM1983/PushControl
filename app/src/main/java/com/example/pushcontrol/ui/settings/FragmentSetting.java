@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.appcompat.widget.SearchView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,7 +40,22 @@ public class FragmentSetting extends Fragment {
 		AppsAdapter appsAdapter = new AppsAdapter(getActivity(), list);
 		binding.appRecyclerView.setAdapter(appsAdapter);
 
-		// save mwme
+		binding.appSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+			@Override
+			public boolean onQueryTextChange(String s) {
+				// Вытаскиваем автоматически при вводе каждого символа
+				appsAdapter.filter(s);
+				return false;
+			}
+
+			@Override
+			public boolean onQueryTextSubmit(String s) {
+				// Действие при нажатии кнопки поиск на клавиатуре
+
+				return false;
+			}
+		});
+
 		return root;
 	}
 }

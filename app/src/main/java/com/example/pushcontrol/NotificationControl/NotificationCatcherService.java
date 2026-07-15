@@ -8,13 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import android.util.Log;
 
 import androidx.core.app.NotificationManagerCompat;
 
@@ -22,11 +20,13 @@ import com.example.pushcontrol.DataBaze.DatabaseHelper;
 import com.example.pushcontrol.DataBaze.NotificBD;
 
 public class NotificationCatcherService extends NotificationListenerService {
-	private static final String TAG = "NotifCatcher";
-
 	@Override
 	public void onNotificationPosted(StatusBarNotification sbn) {
 		if (sbn == null) return;
+		// 2. Жесткий фильтр системного мусора (зарядка, скриншоты и т.д.)
+		if (packageName == null || packageName.equals("com.android.systemui") || packageName.equals("android")) {
+			return;
+		}
 
 		Context context = getApplicationContext() != null ? getApplicationContext() : this;
 		NotificBD push = null;
@@ -34,12 +34,19 @@ public class NotificationCatcherService extends NotificationListenerService {
 
 		String title = "";
 		String text = "";
+		String serverId = "";
 		byte[] imageBytes = null; // Переменная для хранения картинки
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
 				Bundle extras = sbn.getNotification().extras;
-				inspectBundle(extras, "Notification(" + sbn.getPackageName() + ")");
+				// Извлекаем Google Message ID
+				serverId = extras.getString("google.message_id");
+				// Если его нет, берем уникальный ключ Android-уведомления (sbn.getKey())
+				if (serverId == null || serverId.isEmpty()) {
+					serverId = sbn.getKey();
+				}
+				// inspectBundle(extras, "Notification(" + sbn.getPackageName() + ")");
 				title = extras.getString(Notification.EXTRA_TITLE, "");
 
 				// Используем getCharSequence и приведение к строке, так как некоторые приложения (например, WhatsApp)
@@ -78,7 +85,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 														imageBytes = bitmapToByteArray(bitmap);
 													}
 												} catch (Exception e) {
-													Log.e(TAG, "Не удалось прочитать фото по URI: " + e.getMessage());
+													e.printStackTrace();
 												}
 											}
 										}
@@ -115,11 +122,10 @@ public class NotificationCatcherService extends NotificationListenerService {
 														Bitmap bitmap = BitmapFactory.decodeStream(is);
 														if (bitmap != null) {
 															imageBytes = bitmapToByteArray(bitmap);
-															Log.d("MAX_INSPECTOR_SUCCESS", "🎉 Успешно скачали ФОТО из URI! Размер байт: " + imageBytes.length);
 															break; // Фото найдено и сохранено, выходим из цикла!
 														}
 													} catch (Exception e) {
-														Log.e("MAX_INSPECTOR_ERROR", "Не удалось прочитать поток по URI: " + e.getMessage());
+														e.printStackTrace();
 													}
 												}
 											}
@@ -139,7 +145,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 						}
 					}
 				}
-				push = new NotificBD(packageName, text, title, imageBytes);
+				push = new NotificBD(packageName, text, title, imageBytes, 0, serverId);
 			}
 		}
 
@@ -156,10 +162,11 @@ public class NotificationCatcherService extends NotificationListenerService {
 				}
 				dbHelper.insertNotification(push); // Сюда уйдет объект уже с картинкой внутри
 				dbHelper.logAllNotifications();
+				dbHelper.close();
+				handleNotification(push);
 			} catch (Exception e) {
-				Log.d(TAG, "Не удалось записать данные в SQLite: " + e.getMessage());
+				e.printStackTrace();
 			}
-			handleNotification(packageName, title, text);
 		}
 	}
 
@@ -174,67 +181,14 @@ public class NotificationCatcherService extends NotificationListenerService {
 
 	@Override
 	public void onNotificationRemoved(StatusBarNotification sbn) {
-		Log.d(TAG, "Уведомление удалено: " + sbn.getPackageName());
 	}
 
-	public void handleNotification(String packageName, String title, String text) {
+	public void handleNotification(NotificBD push) {
 		Intent intent = new Intent("NOTIFICATION_RECEIVED");
-		intent.putExtra("package", packageName);
-		intent.putExtra("title", title);
-		intent.putExtra("text", text);
+		intent.setPackage(getPackageName());
+		intent.putExtra("package", push.getPackageName());
+		intent.putExtra("title", push.getTitle());
+		intent.putExtra("text", push.getText());
 		sendBroadcast(intent);
 	}
-	// Вспомогательный рекурсивный метод для обхода ВСЕХ вложенных Bundle и коллекций
-	private void inspectBundle(Bundle bundle, String path) {
-		if (bundle == null) return;
-
-		for (String key : bundle.keySet()) {
-			Object value = bundle.get(key);
-			String fullPath = path + " -> [" + key + "]";
-
-			if (value == null) {
-				Log.d("MAX_INSPECTOR", fullPath + " = null");
-				continue;
-			}
-
-			String typeName = value.getClass().getSimpleName();
-
-			// 1. Если нашли картинку Bitmap в чистом виде
-			if (value instanceof Bitmap) {
-				Bitmap bmp = (Bitmap) value;
-				Log.w("MAX_INSPECTOR", fullPath + " 🔴 НАЙДЕН BITMAP! Размеры: " + bmp.getWidth() + "x" + bmp.getHeight());
-			}
-			// 2. Если нашли системный объект Иконки (Android 6.0+)
-			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && value instanceof android.graphics.drawable.Icon) {
-				Log.w("MAX_INSPECTOR", fullPath + " 🟡 НАЙДЕН ОБЪЕКТ ICON!");
-			}
-			// 3. Если нашли ссылку на внутренний медиафайл (Uri)
-			else if (value instanceof android.net.Uri) {
-				Log.w("MAX_INSPECTOR", fullPath + " 🔵 НАЙДЕН АДРЕС URI: " + value.toString());
-			}
-			// 4. Если нашли вложенную папку (Bundle), уходим вглубь на разведку
-			else if (value instanceof Bundle) {
-				Log.d("MAX_INSPECTOR", fullPath + " (Вложенный Bundle):");
-				inspectBundle((Bundle) value, fullPath);
-			}
-			// 5. Если это массив сообщений (MessagingStyle), который используют мессенджеры
-			else if (value instanceof Parcelable[]) {
-				Log.d("MAX_INSPECTOR", fullPath + " (Массив Parcelable[], проверяем элементы):");
-				Parcelable[] array = (Parcelable[]) value;
-				for (int i = 0; i < array.length; i++) {
-					if (array[i] instanceof Bundle) {
-						inspectBundle((Bundle) array[i], fullPath + "[" + i + "]");
-					}
-				}
-			}
-			// 6. Любые другие текстовые/числовые данные печатаем обычной строкой
-			else {
-				Log.d("MAX_INSPECTOR", fullPath + " (Тип: " + typeName + ") = " + value.toString());
-			}
-		}
-	}
-
 }
-
-
-

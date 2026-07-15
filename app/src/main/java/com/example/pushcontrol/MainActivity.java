@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 		// Инициализируем приемник бродкастов от нашего сервиса
 		notificationReceiver = new NotificationReceiver();
 
-			// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ ВАШЕГО ПРОЕКТА
+		// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ ВАШЕГО ПРОЕКТА
 		// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ JETPACK NAVIGATION
 		getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 			@Override
@@ -162,6 +162,8 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		});
+
+
 	}
 
 	private void updateDrawerWithSelectedApps() {
@@ -300,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
 		public void onReceive(Context context, Intent intent) {
 			if (intent != null && "NOTIFICATION_RECEIVED".equals(intent.getAction())) {
 				String packageName = intent.getStringExtra("package");
-				String title = intent.getStringExtra("titile"); // учитываем вашу опечатку "titile"
+				String title = intent.getStringExtra("title"); // учитываем вашу опечатку "titile"
 				String text = intent.getStringExtra("text");
 
 				// Сюда будут попадать пуши ТОЛЬКО от выбранных пользователем приложений

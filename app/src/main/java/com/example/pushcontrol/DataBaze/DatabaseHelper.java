@@ -2,10 +2,12 @@ package com.example.pushcontrol.DataBaze;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import static com.example.pushcontrol.Constans.PreferencesConstants.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	// Настройки базы данных
 	private static final String DATABASE_NAME = "notifications.db";
-	private static final int DATABASE_VERSION = 2;
+	private static final int DATABASE_VERSION = 1;
+	private final Context context;
 
 	// Названия таблицы и столбцов
 	public static final String TABLE_NAME = "captured_notifications";
@@ -25,24 +28,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	public static final String COLUMN_TEXT = "text";
 	public static final String COLUMN_TIMESTAMP = "timestamp";
 	public static final String COLUMN_IMAGE = "notification_image";
+	public static final String COLUMN_SERVER_ID = "server_id";
 
 	// SQL-запрос для создания таблицы
 	private static final String TABLE_CREATE =
 			"CREATE TABLE " + TABLE_NAME + " (" +
 					COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
 					COLUMN_PACKAGE + " TEXT, " +
+					COLUMN_SERVER_ID + " TEXT," +
 					COLUMN_TITLE + " TEXT, " +
 					COLUMN_TEXT + " TEXT, " +
-					COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
-					COLUMN_IMAGE + " BLOB" +
+					COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+					COLUMN_IMAGE + " BLOB, " +
+					// Умная уникальность: защищает и от повторов системных пушей, и от дублей внутри чатов
+					"UNIQUE(" + COLUMN_PACKAGE + ", " + COLUMN_SERVER_ID + ", " + COLUMN_TEXT + ")" +
 					");";
 
 	public DatabaseHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+		this.context = context;
 	}
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		db.execSQL(TABLE_CREATE);
+		// Создаем индекс для быстрого поиска
+		db.execSQL("CREATE INDEX IF NOT EXISTS idx_package ON " + TABLE_NAME + " (" + COLUMN_PACKAGE + ");");
 		Log.d(TAG, "Таблица базы данных успешно создана.");
 	}
 
@@ -68,25 +78,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	/**
 	 * Метод для сохранения уведомления в базу данных
 	 */
-	public void insertNotification(NotificBD push) {
+	public long insertNotification(NotificBD push) {
 		// Открываем базу данных для записи
 		SQLiteDatabase db = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
 
 		// Заполняем поля данными
 		values.put(COLUMN_PACKAGE, push.getPackageName());
+		values.put(COLUMN_SERVER_ID, push.getServerId()); // Записываем серверный ID
 		values.put(COLUMN_TITLE, push.getTitle());
 		values.put(COLUMN_TEXT, push.getText());
 		values.put(COLUMN_IMAGE,push.getImage());
 
 		// Вставляем строку в таблицу
-		long newRowId = db.insert(TABLE_NAME, null, values);
-
+		long newRowId = db.insertWithOnConflict(TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_IGNORE);
 		if (newRowId == -1) {
 			Log.e(TAG, "Ошибка при сохранении уведомления в SQLite");
 		} else {
 			Log.d(TAG, "Уведомление успешно сохранено в SQLite. ID строки: " + newRowId);
 		}
+		return newRowId;
 	}
 
 	public void logAllNotifications() {
@@ -128,18 +139,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				COLUMN_ID + " DESC"
 		);
 
-		if (cursor.moveToFirst()) {
-			do {
-				String pkg = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE));
-				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
-				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
-				Long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
-				byte[] image = cursor.getBlob(cursor.getColumnIndexOrThrow(COLUMN_IMAGE));
+		if (cursor != null) {
+			// КЭШИРУЕМ ИНДЕКСЫ КОЛОНОК ОДИН РАЗ ДО ЦИКЛА (Это сильно ускорит работу)
+			int pkgIdx = cursor.getColumnIndexOrThrow(COLUMN_PACKAGE);
+			int titleIdx = cursor.getColumnIndexOrThrow(COLUMN_TITLE);
+			int textIdx = cursor.getColumnIndexOrThrow(COLUMN_TEXT);
+			int idIdx = cursor.getColumnIndexOrThrow(COLUMN_ID);
+			int imgIdx = cursor.getColumnIndexOrThrow(COLUMN_IMAGE);
+			if (cursor.moveToFirst()) {
+				do {
+					String pkg = cursor.getString(pkgIdx);
+					String title = cursor.getString(titleIdx);
+					String text = cursor.getString(textIdx);
+					Long id = cursor.getLong(idIdx);
 
-				list.add(new NotificBD(pkg, text, title, image, id));
-			} while (cursor.moveToNext());
+					// Чтение байтов картинки
+					byte[] image = cursor.getBlob(imgIdx);
+
+					list.add(new NotificBD(pkg, text, title, image, id));
+				} while (cursor.moveToNext());
+			}
+			cursor.close();
 		}
-		cursor.close();
 		return list;
 	}
 
@@ -172,7 +193,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	public void deleteItem(long id) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		db.delete(TABLE_NAME, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
-		db.close();
+		SharedPreferences prefDel = context.getSharedPreferences(DELETE_COUNT_DB, Context.MODE_PRIVATE);
+		int currentCount = prefDel.getInt(KEY_DELETE_COUNT, 0);
+		currentCount++; // Увеличиваем на 1
+		// 2. Проверяем, набралось ли 50 удалений
+		if (currentCount >= 50) {
+			// Набралось! Запускаем сжатие в фоновом потоке
+			new Thread(() -> {
+				try {
+					db.execSQL("VACUUM");
+					Log.d("DB_OPTIMIZE", "VACUUM успешно выполнен по достижении лимита удалений");
+				} catch (Exception e) {
+					Log.e("DB_OPTIMIZE", "Ошибка VACUUM", e);
+				}
+			}).start();
+			// Сбрасываем счетчик в 0
+			prefDel.edit().putInt(KEY_DELETE_COUNT, 0).apply();
+		} else {
+			// Еще не набралось — просто сохраняем новое число обратно в SharedPreferences
+			prefDel.edit().putInt(KEY_DELETE_COUNT, currentCount).apply();
+		}
 	}
 
 	// Удалить абсолютно все уведомления из таблицы
