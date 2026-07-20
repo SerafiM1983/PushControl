@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.pushcontrol"
+    namespace = "com.serafimApp.pushcontrol"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.pushcontrol"
+        applicationId = "com.serafimApp.pushcontrol"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
