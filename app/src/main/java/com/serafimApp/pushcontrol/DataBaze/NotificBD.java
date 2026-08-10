@@ -10,8 +10,6 @@ public class NotificBD {
 	long id;
 	private String serverId;
 
-
-
 	public NotificBD(String packageName, String text, String title, byte[] image, long id, String serverId) {
 		this.packageName = packageName;
 		this.text = text;
@@ -88,7 +86,8 @@ public class NotificBD {
 				+ "text = " + text + "\n"
 				+ "packageName = " + packageName + "\n"
 				+ "id = " + id + "\n"
-				+ "image = " +/* imgInt */ java.util.Arrays.toString(image)
+				+ "image = " +/* imgInt */ java.util.Arrays.toString(image) + "\n"
+				+ "serverId = " + serverId
 		);
 	}
 }

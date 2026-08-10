@@ -1,14 +1,22 @@
 <resources>
-    <string name="app_name">Push Control</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
-    <string name="nav_header_desc">Navigation header</string>
+
     <string name="action_settings">Settings</string>
 
-    <string name="menu_home">Home</string>
-    <string name="menu_gallery">Gallery</string>
-    <string name="menu_slideshow">Slideshow</string>
+    <string name="app_name">Push Control</string>
+
+    <!-- Используются -->
     <string name="loading_finish">Loading Finish</string>
+    <string name="permission_loads">The application requires permissions to function.</string>
+    <string name="permission_loads_of_notification_listener">Next</string>
+    <string name="general_feed">General feed</string>
+    <string name="settings_app">Settings App</string>
+    <string name="clear_chat">Clear chat</string>
+    <string name="clear_all">Clear all</string>
+    <string name="permission_loads_ok_notification_listener">Ok</string>
+
+    <string name="text_dialog_2">"Permission is not granted, please try to enable it.
+    In the window that appears, tap the three dots icon (top right corner of the screen).
+        Then tap \"Allow restricted settings\" (this option may vary depending on your Android version)."</string>
+
+    <string name="text_dialog_1">"This application requires permissions to function properly."</string>
 </resources>

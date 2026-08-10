@@ -3,6 +3,9 @@ package com.serafimApp.pushcontrol.NotificationControl;
 import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.*;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,24 +16,40 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.serafimApp.pushcontrol.DataBaze.DatabaseHelper;
 import com.serafimApp.pushcontrol.DataBaze.NotificBD;
+import com.serafimApp.pushcontrol.MainActivity;
+import com.serafimApp.pushcontrol.R;
 
 public class NotificationCatcherService extends NotificationListenerService {
 	@Override
 	public void onNotificationPosted(StatusBarNotification sbn) {
 		if (sbn == null) return;
 		// 2. Жесткий фильтр системного мусора (зарядка, скриншоты и т.д.)
-		if (packageName == null || packageName.equals("com.android.systemui") || packageName.equals("android")) {
+
+		if (sbn.getPackageName() == null || sbn.getPackageName().equals("com.android.systemui") || sbn.getPackageName().equals("android")) {
+			Log.d("SdReguest", "return");
 			return;
 		}
 
 		Context context = getApplicationContext() != null ? getApplicationContext() : this;
-		NotificBD push = null;
 		String packageName = sbn.getPackageName();
+
+		SharedPreferences prefs = context.getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
+		boolean iaAllowedByUser = prefs.getBoolean(packageName, false);
+		if (!iaAllowedByUser) {
+			Log.d("SdReguest", "Нет в памяти выходим");
+			return;
+		}
+
+
+
+		NotificBD push = null;
 
 		String title = "";
 		String text = "";
@@ -41,9 +60,10 @@ public class NotificationCatcherService extends NotificationListenerService {
 			if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
 				Bundle extras = sbn.getNotification().extras;
 				// Извлекаем Google Message ID
-				serverId = extras.getString("google.message_id");
 				// Если его нет, берем уникальный ключ Android-уведомления (sbn.getKey())
 				if (serverId == null || serverId.isEmpty()) {
+					Log.d("SdReguest", sbn.getKey().toString());
+
 					serverId = sbn.getKey();
 				}
 				// inspectBundle(extras, "Notification(" + sbn.getPackageName() + ")");
@@ -134,40 +154,54 @@ public class NotificationCatcherService extends NotificationListenerService {
 								}
 							}
 						}
-						else {
-							// Код для остальных приложений (Telegram, WhatsApp и т.д.)
-							if (extras.containsKey(Notification.EXTRA_PICTURE)) {
-								Bitmap bitmap = (Bitmap) extras.get(Notification.EXTRA_PICTURE);
-								if (bitmap != null) {
-									imageBytes = bitmapToByteArray(bitmap);
-								}
-							}
-						}
 					}
 				}
 				push = new NotificBD(packageName, text, title, imageBytes, 0, serverId);
+				Log.d("SdReguest", "push = " + push.toString());
 			}
 		}
 
-		SharedPreferences prefs = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
-		boolean systemEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled();
-		boolean iaAllowedByUser = prefs.getBoolean(packageName, systemEnabled);
+		try {
+			DatabaseHelper dbHelper = new DatabaseHelper(context);
+			if (push.getTitle().isEmpty()) {
+				dbHelper.close();
+				return;
+			}
+			dbHelper.insertNotification(push); // Сюда уйдет объект уже с картинкой внутри
+			dbHelper.logAllNotifications();
+			dbHelper.close();
+			handleNotification(push);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		showPushControlSummaryNotification();
+		cancelNotification(sbn.getKey());
 
-		if (iaAllowedByUser) {
+		/*if (iaAllowedByUser) {
+			cancelNotification(sbn.getKey());
 			try {
 				DatabaseHelper dbHelper = new DatabaseHelper(context);
 				if (push.getTitle().isEmpty()) {
 					dbHelper.close();
 					return;
 				}
-				dbHelper.insertNotification(push); // Сюда уйдет объект уже с картинкой внутри
+				dbHelper.insertNotification(push);
 				dbHelper.logAllNotifications();
 				dbHelper.close();
 				handleNotification(push);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
+
+			// ИСПРАВЛЕНИЕ: Вызываем пуш с микрозадержкой, чтобы разделить транзакции в системе
+			new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					showPushControlSummaryNotification();
+				}
+			}, 100); // 100 миллисекунд достаточно
+		}*/
+
 	}
 
 	// Вспомогательный метод для перевода картинок в байты перед сохранением в SQLite
@@ -191,4 +225,48 @@ public class NotificationCatcherService extends NotificationListenerService {
 		intent.putExtra("text", push.getText());
 		sendBroadcast(intent);
 	}
+
+	private void showPushControlSummaryNotification() {
+		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+		// ВАЖНО: поменяли ID на v2, чтобы сбросить старый низкий приоритет в кэше телефона
+		String channelId = "push_control_channel_v2";
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			// ВАЖНО: Поставили IMPORTANCE_DEFAULT вместо IMPORTANCE_LOW
+			NotificationChannel channel = new NotificationChannel(
+					channelId,
+					"PushControl Alerts",
+					NotificationManager.IMPORTANCE_DEFAULT
+			);
+			notificationManager.createNotificationChannel(channel);
+		}
+
+		Intent intent = new Intent(this, MainActivity.class);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+		PendingIntent pendingIntent = PendingIntent.getActivity(
+				this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+		);
+
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setContentTitle("PushControl")
+				.setContentText("У вас есть непрочитанные уведомления")
+				// ВАЖНО: Поставили PRIORITY_DEFAULT вместо PRIORITY_LOW
+				.setPriority(NotificationCompat.PRIORITY_DEFAULT)
+				.setContentIntent(pendingIntent)
+				.setAutoCancel(true);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+				androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
+			Log.e("PushControl", "Нет разрешения POST_NOTIFICATIONS");
+			return;
+		}
+
+		notificationManager.notify(999, builder.build());
+	}
+
+
 }

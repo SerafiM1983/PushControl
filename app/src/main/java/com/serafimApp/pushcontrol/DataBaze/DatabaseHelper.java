@@ -7,14 +7,16 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
 import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.*;
+
+import com.serafimApp.pushcontrol.LogCat;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-	private static final String TAG = "DatabaseHelper";
-
+	LogCat logCat = new LogCat(false); // Отключен лог
 	// Настройки базы данных
 	private static final String DATABASE_NAME = "notifications.db";
 	private static final int DATABASE_VERSION = 1;
@@ -53,7 +55,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		db.execSQL(TABLE_CREATE);
 		// Создаем индекс для быстрого поиска
 		db.execSQL("CREATE INDEX IF NOT EXISTS idx_package ON " + TABLE_NAME + " (" + COLUMN_PACKAGE + ");");
-		Log.d(TAG, "Таблица базы данных успешно создана.");
+		logCat.logShow(DATABASE_HELPER, "Таблица базы данных успешно созданна");
 	}
 
 	@Override
@@ -66,7 +68,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COLUMN_IMAGE + " BLOB;");
 			} catch (Exception e) {
 				// Если что-то пошло не так, пишем в лог, чтобы приложение не упало
-				Log.e("DB_UPGRADE", "Ошибка при добавлении колонки картинок: " + e.getMessage());
+				logCat.logShow(DATABASE_HELPER,  "Ошибка при добавлении колонки картинок: " + e.getMessage());
 			}
 		}
 
@@ -93,9 +95,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		// Вставляем строку в таблицу
 		long newRowId = db.insertWithOnConflict(TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_IGNORE);
 		if (newRowId == -1) {
-			Log.e(TAG, "Ошибка при сохранении уведомления в SQLite");
+			logCat.logShow(DATABASE_HELPER,  "Ошибка при сохранении уведомления в SQLite");
 		} else {
-			Log.d(TAG, "Уведомление успешно сохранено в SQLite. ID строки: " + newRowId);
+			logCat.logShow(DATABASE_HELPER,  "Уведомление успешно сохранено в SQLite. ID строки: " + newRowId);
 		}
 		return newRowId;
 	}
@@ -111,15 +113,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
 				String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
 				String time = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TIMESTAMP));
-
-				Log.d(TAG, "ID: " + id + " | " + time + " | Пакет: " + pkg + " | [" + title + "] " + text);
 			} while (cursor.moveToNext());
 		}
-		Log.d(TAG, "=== ВСЕГО ЗАПИСЕЙ В БАЗЕ: " + cursor.getCount() + " ===");
-
 		cursor.close();
-
-		Log.d(TAG, "=================================");
 	}
 
 	/**
@@ -202,9 +198,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 			new Thread(() -> {
 				try {
 					db.execSQL("VACUUM");
-					Log.d("DB_OPTIMIZE", "VACUUM успешно выполнен по достижении лимита удалений");
 				} catch (Exception e) {
-					Log.e("DB_OPTIMIZE", "Ошибка VACUUM", e);
+					logCat.logShow(DATABASE_HELPER,  "Ошибка VACUUM = " + e);
 				}
 			}).start();
 			// Сбрасываем счетчик в 0
@@ -224,10 +219,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	// Удалить уведомления только конкретного приложения
 	public void clearNotificationsByPackage(String packageName) {
-		Log.d("DB_DELL", "packageName = " + packageName);
 		SQLiteDatabase db = this.getWritableDatabase();
 		db.delete(TABLE_NAME,  COLUMN_PACKAGE + " = ?", new String[]{packageName});
 		db.close();
 	}
-
 }

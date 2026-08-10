@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Push Control</string>
+    <string name="action_settings">Настройки</string>
+    <string name="app_name">Лента Уведомлений</string>
+    <string name="permission_loads_of_notification_listener">Далее</string>
+    <string name="general_feed">Общая лента</string>
+    <string name="loading_finish">Загрузка завершина</string>
+    <string name="permission_loads">Для работы приложения необходимо предоставить разрешения.</string>
+    <string name="permission_loads_ok_notification_listener">Да</string>
+    <string name="settings_app">Настройки приложений</string>
+    <string name="clear_chat">Очистить чат</string>
+    <string name="clear_all">Очистить все</string>
+    <string name="text_dialog_2">"Разрешение не предоставлено, попробуйте предоставить.
+    В появившемся окне нажмите на три точки (верхний правый угол экрана). Нажмите на «Разрешить настройки с ограниченным доступом»
+        (название может отличаться в зависимости от версии)."</string>
+
+
+    <string name="text_dialog_1">Для работы приложения требуется предоставить разрешения</string>
+
 </resources>

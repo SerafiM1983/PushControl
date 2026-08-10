@@ -10,7 +10,6 @@ import android.graphics.Canvas;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.serafimApp.pushcontrol.DataBaze.DatabaseHelper;
 import com.serafimApp.pushcontrol.DataBaze.NotificBD;
+import com.serafimApp.pushcontrol.LogCat;
 import com.serafimApp.pushcontrol.R;
 import com.serafimApp.pushcontrol.databinding.FragmentHomeBinding;
 import com.yandex.mobile.ads.banner.BannerAdSize;
@@ -41,7 +41,7 @@ import com.yandex.mobile.ads.common.MobileAds;
 import java.util.List;
 
 public class HomeFragment extends Fragment {
-	private final String TAG = "AdRequest";
+	LogCat logCat = new LogCat(false); // Отключены уведомления
 	private boolean isGeneralFeed = false;
 	private NotificationsAdapter adapter;
 	private List<NotificBD> notificationList;
@@ -61,6 +61,7 @@ public class HomeFragment extends Fragment {
 
 		binding = FragmentHomeBinding.inflate(inflater, container, false);
 
+		// Яндекс баннер
 		binding.banner.setAdUnitId("R-M-19407785-1");
 		binding.banner.setAdSize(BannerAdSize.stickySize(getActivity().getApplicationContext(), 320));
 		AdRequest adRequest = new AdRequest.Builder().build();
@@ -76,13 +77,12 @@ public class HomeFragment extends Fragment {
 
 		// Настраиваю менеджер компонента списка сообщений
 		binding.rvNotifications.setLayoutManager(new LinearLayoutManager(requireContext()));
-
 		DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
 
 		// Проверяем пришли ли аргументы из боковой панели
-		if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
-			String pascageName = getArguments().getString(selectedPackage);
-			String appNameTitle = getArguments().getString(selectedAppName);
+		if (getArguments() != null && getArguments().containsKey(SELECTED_PACKAGE)) {
+			String pascageName = getArguments().getString(SELECTED_PACKAGE);
+			String appNameTitle = getArguments().getString(SELECTED_APP_NAME);
 
 			// УСТАНАВЛИВАЕМ НАЗВАНИЕ ПРОГРАММЫ
 			if (requireActivity().getActionBar() != null) {
@@ -93,22 +93,16 @@ public class HomeFragment extends Fragment {
 
 			// Загружаем пуши только для кликнутой программы
 			notificationList = dbHelper.getNotificationsByPackage(pascageName);
-			for (NotificBD notificBD : notificationList) {
-				Log.d(TAG, notificBD.toString());
-			}
-			//Log.d("HomeFragment","size = " + notificationList.size());
-			//Log.d("HomeFragment","Object = " + notificationList.toString());
-
 			adapter = new NotificationsAdapter(notificationList, false);
 		} else {
 			// ЕСЛИ АРГУМЕНТОВ НЕТ — СТАВИМ ЗАГЛОВОК «ОБЩАЯ ЛЕНТА»
 			// Если открыли приложение просто так - вернуть стандартный заголовок общей ленты
 			if (((androidx.appcompat.app.AppCompatActivity) requireActivity()).getSupportActionBar() != null) {
-				((androidx.appcompat.app.AppCompatActivity) requireActivity()).getSupportActionBar().setTitle("Общая лента");
+				((androidx.appcompat.app.AppCompatActivity) requireActivity()).getSupportActionBar().setTitle(
+						ContextCompat.getString(getContext(), R.string.general_feed));
 			}
 
 			// Если открыли приложение просто так - показать общую ленту
-			//requireActivity().getActionBar().setTitle("Общая лента");
 			notificationList = dbHelper.getAllNotifications();
 			adapter = new NotificationsAdapter(notificationList, true);
 		}
@@ -120,7 +114,7 @@ public class HomeFragment extends Fragment {
 				LinearLayoutManager.VERTICAL
 		);
 
-		// Привязываем разделитель к вашему RecyclerView
+		// Привязываем разделитель к RecyclerView
 		binding.rvNotifications.addItemDecoration(dividerItemDecoration);
 
 		// Настройка свайпа
@@ -160,7 +154,7 @@ public class HomeFragment extends Fragment {
 				background.draw(c);
 
 				// 2. Рисуем встроенную в Android векторную иконку удаления (белая корзина)
-				// Если у вас есть своя иконка в drawable, замените android.R.drawable.ic_menu_delete на неё
+				// Если  есть своя иконка в drawable, замените android.R.drawable.ic_menu_delete на неё
 
 				Drawable deleteIcon = ContextCompat.getDrawable(requireContext(),
 						android.R.drawable.ic_menu_delete);
@@ -194,24 +188,19 @@ public class HomeFragment extends Fragment {
 		ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipeHandler);
 		itemTouchHelper.attachToRecyclerView(binding.rvNotifications);
 
-		// Переменная pascageName должна быть доступна внутри меню.
-        // Чтобы использовать её там, объявите её как final выше в коде, где вы её получаете:
-        // final String pascageName = getArguments().getString(packageName);
-
-
 		requireActivity().addMenuProvider(new MenuProvider() {
 			@Override
 			public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
 				// 1. Очищаем меню, чтобы пункты не дублировались при переходах
 				menu.clear();
 
-				// 2. Наполняем меню из вашего XML-файла
+				// 2. Наполняем меню из XML-файла
 				menuInflater.inflate(R.menu.main, menu);
 
 				// 3. Строгая проверка: открыто конкретное приложение или общая лента
 
-				if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
-					String currentPkg = getArguments().getString(selectedPackage);
+				if (getArguments() != null && getArguments().containsKey(SELECTED_PACKAGE)) {
+					String currentPkg = getArguments().getString(SELECTED_PACKAGE);
 					if (currentPkg != null && !currentPkg.trim().isEmpty()) {
 						isGeneralFeed = true;
 					}
@@ -221,13 +210,12 @@ public class HomeFragment extends Fragment {
 				MenuItem clearChatEntry = menu.findItem(R.id.action_clear_chat);
 				if (clearChatEntry != null) {
 					clearChatEntry.setVisible(isGeneralFeed); // Покажет ТОЛЬКО в чате программы
-					//menu.findItem(R.id.action_clear_all).setVisible(false);
 				}
 
 				// Управление кнопкой очистить все
 				boolean isSpecificAll = true;
-				if (getArguments() != null && getArguments().containsKey(selectedPackage)) {
-					String currentPkg = getArguments().getString(selectedPackage);
+				if (getArguments() != null && getArguments().containsKey(SELECTED_PACKAGE)) {
+					String currentPkg = getArguments().getString(SELECTED_PACKAGE);
 					if (currentPkg != null && !currentPkg.trim().isEmpty()) {
 						isSpecificAll = false;
 					}
@@ -238,7 +226,7 @@ public class HomeFragment extends Fragment {
 				}
 
 				// Пункты "Настройки приложений" (nav_settings) и "Очистить все" (action_clear_all)
-				// останутся видимыми везде по умолчанию, так как мы их не прячем.
+				// останутся видимыми везде по умолчанию.
 			}
 
 			@Override
@@ -247,7 +235,7 @@ public class HomeFragment extends Fragment {
 
 				if (id == R.id.action_clear_chat) {
 					if (getArguments() != null) {
-						String pascageName = getArguments().getString(selectedPackage);
+						String pascageName = getArguments().getString(SELECTED_PACKAGE);
 						dbHelper.clearNotificationsByPackage(pascageName);
 
 						notificationList.clear();
@@ -269,9 +257,6 @@ public class HomeFragment extends Fragment {
 				return false;
 			}
 		}, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-
-
-
 	}
 
 	@Override
@@ -287,7 +272,6 @@ public class HomeFragment extends Fragment {
 		// 3. Регистрируем приёмник в контексте Activity
 		if (getActivity() != null) {
 			getActivity().registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-			Log.d(TAG, "Слушатель NotificationReceiver УСПЕШНО зарегистрирован в onStart");
 		}
 	}
 
@@ -297,7 +281,6 @@ public class HomeFragment extends Fragment {
 		// Обязательно отключаем приёмник при уходе с экрана (защита от утечек памяти)
 		if (getActivity() != null && notificationReceiver != null) {
 			getActivity().unregisterReceiver(notificationReceiver);
-			Log.d(TAG, "Слушатель NotificationReceiver отключен в onStop");
 		}
 	}
 
@@ -312,7 +295,6 @@ public class HomeFragment extends Fragment {
 	private class NotificationReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d(TAG, "NotificationReceiver");
 			if (intent != null && "NOTIFICATION_RECEIVED".equals(intent.getAction())) {
 
 				// ЖЕЛЕЗНОЕ УСЛОВИЕ: Если это НЕ общая лента (пользователь сидит внутри чата),

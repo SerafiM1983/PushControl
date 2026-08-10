@@ -1,6 +1,12 @@
 package com.serafimApp.pushcontrol.ui.settings;
 
+import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.PREF_IS_NOTIFIGATION_ENBLE;
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.serafimApp.pushcontrol.databinding.FragmentSettingsBinding;
 
 import java.util.List;
+import java.util.Map;
 
 
 public class FragmentSetting extends Fragment {
@@ -27,6 +34,8 @@ public class FragmentSetting extends Fragment {
 		// inizialise mwme
 
 		binding = FragmentSettingsBinding.inflate(inflater, container, false);
+		SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
+
 
 		View root = binding.getRoot();
 		// Получаем лист обьектов AppNotificationCheck
@@ -55,5 +64,9 @@ public class FragmentSetting extends Fragment {
 		});
 
 		return root;
+	}
+
+	private void launchAppPicker() {
+		Intent intent = new Intent(Intent.ACTION_PICK);
 	}
 }

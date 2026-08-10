@@ -33,7 +33,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 		this.originalList = new ArrayList<>(appsList);
 		this.currentList = new ArrayList<>(appsList);
 		this.packageManager = context.getPackageManager();
-		this.sharedPreferences = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
+		this.sharedPreferences = context.getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
 	}
 
 	@NonNull
@@ -52,7 +52,11 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 
 		// Установка состояния передвижного переключателя
 		holder.switchNotification.setOnCheckedChangeListener(null);
-		holder.switchNotification.setChecked(app.isNotificationEnable());
+		//holder.switchNotification.setChecked(app.isNotificationEnable());
+		boolean isSavedEnabled = sharedPreferences.getBoolean(app.getPackageName(), false); // false сделает по умолчанию выключенным
+		app.setNotificationEnable(isSavedEnabled); // синхронизируем модель
+
+		holder.switchNotification.setChecked(isSavedEnabled);
 
 		// Подгружаем иконку
 		try {

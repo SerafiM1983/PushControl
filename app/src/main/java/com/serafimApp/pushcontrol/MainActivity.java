@@ -10,19 +10,20 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -30,29 +31,24 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.serafimApp.pushcontrol.Dialog.DialogPermission;
 import com.serafimApp.pushcontrol.databinding.ActivityMainBinding;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-	private static final int ENABLE_NOTIFICATION_LISTENER = 1;
-	private GestureDetector globalToolbarDetector;
+	LogCat logCat = new LogCat(false); // Отключен лог
 	private AppBarConfiguration mAppBarConfiguration;
 	private ActivityMainBinding binding;
 	private NotificationReceiver notificationReceiver;
 	private boolean isReceiverRegistered = false; // Флаг отслеживания регистрации
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 		// Отключает принудительное перекрашивание иконок в один цвет
 		binding = ActivityMainBinding.inflate(getLayoutInflater());
 		setContentView(binding.getRoot());
-
-		// Проверка доступа к уведомлениям перенесена ниже метода setContentView
-		checkNotificationListenerPermission();
 
 		binding.navView.setItemIconTintList(null);
 		setSupportActionBar(binding.appBarMain.toolbar);
@@ -71,12 +67,10 @@ public class MainActivity extends AppCompatActivity {
 
 		NavigationView navigationView = binding.navView;
 
-
-
 		// Passing each menu ID as a set of Ids because each
 		// menu should be considered as top level destinations.
 		mAppBarConfiguration = new AppBarConfiguration.Builder(
-				R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
+				R.id.nav_home)
 				.setOpenableLayout(drawer)
 				.build();
 		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -85,20 +79,20 @@ public class MainActivity extends AppCompatActivity {
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
 		NavigationUI.setupWithNavController(navigationView, navController);
 		if (getSupportActionBar() != null) {
-			getSupportActionBar().setTitle("Общая Лента");
+			getSupportActionBar().setTitle(ContextCompat.getString(getApplicationContext(), R.string.general_feed));
 		}
 
 		navigationView.setNavigationItemSelectedListener(item -> {
 			Intent intent = item.getIntent();
 			// Проверяем что интент существует и содержит имя пакета приложения
-			if (intent != null && intent.hasExtra(packageName)) {
-				String clickedPackage = intent.getStringExtra(packageName);
-				String appNameTitle = intent.getStringExtra(selectedAppName);
+			if (intent != null && intent.hasExtra(PACKAGE_NAME)) {
+				String clickedPackage = intent.getStringExtra(PACKAGE_NAME);
+				String appNameTitle = intent.getStringExtra(SELECTED_APP_NAME);
 
 				// Упаковка имя пакета в Bundle для передачи во фрагмент
 				Bundle bundle = new Bundle();
-				bundle.putString(selectedPackage, clickedPackage);
-				bundle.putString(selectedAppName, appNameTitle);
+				bundle.putString(SELECTED_PACKAGE, clickedPackage);
+				bundle.putString(SELECTED_APP_NAME, appNameTitle);
 
 				// НАСТРОЙКА: Очищаем стек, чтобы новые экраны заменяли старые, а не наслаивались друг на друга
 				androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
@@ -107,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
 						.build();
 
 				// Открываем фрагмент через NavController и передаем ему bundle.
-				// R.id.nav_home — это ID вашего HomeFragment в nav_graph.xml.
+				// R.id.nav_home — это ID HomeFragment в nav_graph.xml.
 				navController.navigate(R.id.nav_home, bundle, navOptions);
 
 				// Закрываем боковую шторку меню
@@ -123,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
 		// Инициализируем приемник бродкастов от нашего сервиса
 		notificationReceiver = new NotificationReceiver();
 
-		// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ ВАШЕГО ПРОЕКТА
 		// ПРАВИЛЬНЫЙ ОБРАБОТЧИК КНОПКИ НАЗАД ДЛЯ JETPACK NAVIGATION
 		getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 			@Override
@@ -133,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
 						navController.getCurrentBackStackEntry().getArguments() : null;
 
 				// Если аргументы есть и там есть ключ выбранного пакета — значит мы в чате программы
-				if (currentArgs != null && currentArgs.containsKey(selectedPackage)) {
+				if (currentArgs != null && currentArgs.containsKey(SELECTED_PACKAGE)) {
 
 					// Настройка навигации для возврата: полностью чистим историю
 					androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
@@ -145,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
 					// После возврата на Главную принудительно возвращаем заголовок
 					if (getSupportActionBar() != null) {
-						getSupportActionBar().setTitle("Общая Лента");
+						getSupportActionBar().setTitle(ContextCompat.getString(getApplicationContext(), R.string.general_feed));
 					}
 				} else {
 					// Если мы уже на Общей ленте (аргументов нет) — закрываем приложение
@@ -154,8 +147,6 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		});
-
-
 	}
 
 	private void updateDrawerWithSelectedApps() {
@@ -169,8 +160,8 @@ public class MainActivity extends AppCompatActivity {
 
 		PackageManager pm = getPackageManager();
 
-		// Используем ваше имя файла настроек из PreferencesConstants
-		SharedPreferences prefs = getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
+		// Используем имя файла настроек из PreferencesConstants
+		SharedPreferences prefs = getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
 
 		// Получаем список только установленных пользователем приложений
 		List<ApplicationInfo> installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
@@ -191,13 +182,11 @@ public class MainActivity extends AppCompatActivity {
 						MenuItem item = menu.add(R.id.dynamic_apps_croup, itemId, Menu.NONE, appName);
 						item.setIcon(icon);
 
-						// ПередаемpackageName через вашу константу
+						// Передаем packageName через константу
 						Intent intent = new Intent();
-						intent.putExtra(packageName, appInfo.packageName);
-						intent.putExtra(selectedAppName, appName);
+						intent.putExtra(PACKAGE_NAME, appInfo.packageName);
+						intent.putExtra(SELECTED_APP_NAME, appName);
 						item.setIntent(intent);
-						Log.d("TITLE", "Titlt = " + appName);
-
 						itemId++;
 					} catch (PackageManager.NameNotFoundException e) {
 						e.printStackTrace();
@@ -207,11 +196,9 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-
 	@Override
 	protected void onResume() {
 		super.onResume();
-
 		// Проверяем, что ресивер создан и ЕЩЕ НЕ зарегистрирован
 		if (notificationReceiver != null && !isReceiverRegistered) {
 			IntentFilter filter = new IntentFilter("NOTIFICATION_RECEIVED");
@@ -232,21 +219,65 @@ public class MainActivity extends AppCompatActivity {
 				unregisterReceiver(notificationReceiver);
 			} catch (IllegalArgumentException e) {
 				// На всякий случай гасим непредвиденную ошибку системы
-				Log.e("MainActivity", "Ошибка при отписке ресивера: " + e.getMessage());
+				logCat.logShow(EXEPTION, e.getMessage());
 			}
 			isReceiverRegistered = false; // Сбрасываем флаг
 		}
 	}
 
-
 	private void checkNotificationListenerPermission() {
 		if (!isNotificationListenerEnabled()) {
-			// Показываем пользователю всплывающее окно (Snackbar) с кнопкой-переходом в настройки
-			Snackbar.make(binding.getRoot(), "Приложению необходим доступ к уведомлениям", Snackbar.LENGTH_INDEFINITE)
-					.setAction("Включить", view -> {
+			// 1. Создаем экземпляр класса диалога
+			DialogPermission dialog1 = new DialogPermission();
+
+            // 2. Показываем его, передавая getSupportFragmentManager()
+			dialog1.dialogNotificationListenerPermission(getSupportFragmentManager(), new DialogPermission.OnDialogActionListener() {
+				@Override
+				public void onActionClick(int buttonId) {
+					if (buttonId == R.id.app_permission_ok) {
 						Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
 						startActivity(intent);
-					}).show();
+					} else if (buttonId == R.id.app_permission_off) {
+						// Проверяем разрешение
+						if (!isNotificationListenerEnabled()) {
+							// Если не получилось идем в О приложении
+							DialogPermission dialog2 = new DialogPermission();
+							dialog2.dialogPostNotificationPermission(getSupportFragmentManager(), new DialogPermission.OnDialogActionListener() {
+								@Override
+								public void onActionClick(int buttonId) {
+									if (buttonId == R.id.app_permission_ok){
+										Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                       // Формируем уникальный путь (URI) конкретно для вашего Package Name
+										Uri uri = Uri.fromParts("package", getPackageName(), null);
+										intent.setData(uri);
+
+                                       // Флаг NEW_TASK гарантирует стабильный запуск интента из фрагментов и диалогов
+										intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+										startActivity(intent);
+
+									}
+								}
+							});
+
+						} else if (buttonId == R.id.app_permission_off) {
+							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+								if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.POST_NOTIFICATIONS)
+										!= PackageManager.PERMISSION_GRANTED) {
+
+									// Запрашиваем разрешение на уведомления
+									ActivityCompat.requestPermissions(MainActivity.this,
+											new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+								}
+							}
+						}
+					}
+				}
+			});
+		} else if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.POST_NOTIFICATIONS)
+				!= PackageManager.PERMISSION_GRANTED) {
+			// Запрашиваем разрешение на уведомления
+			ActivityCompat.requestPermissions(MainActivity.this,
+					new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
 		}
 	}
 
@@ -261,7 +292,6 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
@@ -279,7 +309,6 @@ public class MainActivity extends AppCompatActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
-
 	@Override
 	public boolean onSupportNavigateUp() {
 		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -287,19 +316,22 @@ public class MainActivity extends AppCompatActivity {
 				|| super.onSupportNavigateUp();
 	}
 
-
 	// Внутренний класс для перехвата сообщений из NotificationCatcherService в реальном времени
 	private class NotificationReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent != null && "NOTIFICATION_RECEIVED".equals(intent.getAction())) {
 				String packageName = intent.getStringExtra("package");
-				String title = intent.getStringExtra("title"); // учитываем вашу опечатку "titile"
+				String title = intent.getStringExtra("title");
 				String text = intent.getStringExtra("text");
-
-				// Сюда будут попадать пуши ТОЛЬКО от выбранных пользователем приложений
-				// Теперь вы можете динамически обновлять UI (например, добавлять элемент в список на главном экране)
 			}
 		}
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		// Проверка доступа к уведомлениям
+		checkNotificationListenerPermission();
 	}
 }

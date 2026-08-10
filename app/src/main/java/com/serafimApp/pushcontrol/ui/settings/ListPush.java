@@ -15,10 +15,11 @@ import java.util.List;
 public class ListPush {
 
 	public List<AppModel> getAppsWithNotifications(Context context) {
+		String myOwnPackage = context.getPackageName();
 		PackageManager packageManager = context.getPackageManager();
 
 		// Считываем настройки по вашей константе
-		SharedPreferences prefs = context.getSharedPreferences(prefIsNotifigationEnble, Context.MODE_PRIVATE);
+		SharedPreferences prefs = context.getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
 		List<AppModel> allowedAppsList = new ArrayList<>();
 
 		// Получаем все установленные приложения в системе
@@ -29,12 +30,12 @@ public class ListPush {
 			if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
 				String appName = appInfo.loadLabel(packageManager).toString();
 				String packageName = appInfo.packageName;
-
-				// Получаем базовый статус уведомлений
-				boolean systemEnable = NotificationManagerCompat.from(context).areNotificationsEnabled();
+				if (packageName.equals(myOwnPackage)) {
+					continue; // Переходим к следующему приложению в цикле
+				}
 
 				// ИСПРАВЛЕНО: Читаем строго по простому packageName, как в вашем AppsAdapter!
-				boolean isNotificationsEnable = prefs.getBoolean(packageName, systemEnable);
+				boolean isNotificationsEnable = prefs.getBoolean(packageName, false);
 
 				// Подгружаем иконку приложения
 				Drawable icon = appInfo.loadIcon(packageManager);

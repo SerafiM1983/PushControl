@@ -5,12 +5,13 @@
     android:id="@+id/mobile_navigation"
     app:startDestination="@+id/nav_home">
 
+
     <fragment
         android:id="@+id/nav_home"
         android:name="com.serafimApp.pushcontrol.ui.home.HomeFragment"
-        android:label="@string/menu_home"
+        android:label="@string/general_feed"
         tools:layout="@layout/fragment_home" />
-
+   <!--
     <fragment
         android:id="@+id/nav_gallery"
         android:name="com.serafimApp.pushcontrol.ui.gallery.GalleryFragment"
@@ -22,10 +23,11 @@
         android:name="com.serafimApp.pushcontrol.ui.slideshow.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
+        -->
 
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.serafimApp.pushcontrol.ui.settings.FragmentSetting"
-        android:label="Настройки"
+        android:label="@string/action_settings"
         tools:layout="@layout/fragment_settings" />
 </navigation>

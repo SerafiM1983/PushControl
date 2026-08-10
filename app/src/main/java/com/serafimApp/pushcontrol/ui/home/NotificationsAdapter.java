@@ -58,7 +58,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 				// Для всех остальных файлов .mp4 и обычных сообщений — выводим оригинальный текст
 				holder.tvText.setText(text);
 			}
-		} else {
+		}
+		else {
 			holder.tvText.setText("");
 		}
 
@@ -84,34 +85,34 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 				holder.tvAppName.setText(pkgName);
 				holder.imageApp.setImageResource(android.R.drawable.sym_def_app_icon);
 			}
-		} else {
+		}
+		else {
 		// ВНУТРИ ЧАТА ПРОГРАММЫ
-		holder.ll.setVisibility(View.GONE); // Скрываем шапку приложения
+			holder.ll.setVisibility(View.GONE); // Скрываем шапку приложения
 
-		byte[] imageBytes = notif.getImage();
-		String currentText = notif.getText();
+			byte[] imageBytes = notif.getImage();
+			String currentText = notif.getText();
 
-		// ЖЕЛЕЗНОЕ УСЛОВИЕ: Картинка показывается ТОЛЬКО если текст содержит маркер фото
-		if (imageBytes != null && imageBytes.length > 0 && currentText != null/* && currentText.contains("📷 фото")*/) {
+				// ЖЕЛЕЗНОЕ УСЛОВИЕ: Картинка показывается ТОЛЬКО если текст содержит маркер фото
+			if (imageBytes != null && imageBytes.length > 0 && currentText != null/* && currentText.contains("📷 фото")*/) {
 
 			Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
 			if (bitmap != null) {
-				holder.imgAttachment.setVisibility(View.VISIBLE);
-				holder.imgAttachment.setImageBitmap(bitmap);
+			holder.imgAttachment.setVisibility(View.VISIBLE);
+			holder.imgAttachment.setImageBitmap(bitmap);
 			} else {
 				// Защита от сбоя декодирования
-				holder.imgAttachment.setImageBitmap(null);
-				holder.imgAttachment.setVisibility(View.GONE);
-			}
-		} else {
-			// Для сообщения с текстом "Это официальная информация..."
-			// Мы ПРИНУДИТЕЛЬНО очищаем и скрываем ImageView, убирая дубликат картинки!
 			holder.imgAttachment.setImageBitmap(null);
 			holder.imgAttachment.setVisibility(View.GONE);
+			}
+			} else {
+				// Для сообщения с текстом "Это официальная информация..."
+				// Мы ПРИНУДИТЕЛЬНО очищаем и скрываем ImageView, убирая дубликат картинки!
+			holder.imgAttachment.setImageBitmap(null);
+			holder.imgAttachment.setVisibility(View.GONE);
+			}
 		}
 	}
-
-}
 
 	@Override
 	public int getItemCount() {
