@@ -73,6 +73,7 @@ public class NotificationCatcherService extends NotificationListenerService {
 				// передают текст в виде сложного SpannableString, из-за чего обычный getString() может вернуть null.
 				text = extras.getCharSequence(Notification.EXTRA_TEXT) != null ?
 						extras.getCharSequence(Notification.EXTRA_TEXT).toString() : "";
+				if (title.equals("Аудиосообщение") && text.equals("Входящий видеозвонок")) return;
 
 				// --- НАЧАЛО ПЕРЕХВАТА РЕАЛЬНОЙ ФОТОГРАФИИ ---
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -160,22 +161,23 @@ public class NotificationCatcherService extends NotificationListenerService {
 				Log.d("SdReguest", "push = " + push.toString());
 			}
 		}
-
+		DatabaseHelper dbHelper = new DatabaseHelper(context);
 		try {
-			DatabaseHelper dbHelper = new DatabaseHelper(context);
 			if (push.getTitle().isEmpty()) {
 				dbHelper.close();
 				return;
 			}
-			dbHelper.insertNotification(push); // Сюда уйдет объект уже с картинкой внутри
-			dbHelper.logAllNotifications();
-			dbHelper.close();
+			// Сюда уйдет объект уже с картинкой внутри
+			if (!dbHelper.insertNotification(push)) return;
 			handleNotification(push);
+			showPushControlSummaryNotification();
+			cancelNotification(sbn.getKey());
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			dbHelper.close();
 		}
-		showPushControlSummaryNotification();
-		cancelNotification(sbn.getKey());
+
 
 		/*if (iaAllowedByUser) {
 			cancelNotification(sbn.getKey());

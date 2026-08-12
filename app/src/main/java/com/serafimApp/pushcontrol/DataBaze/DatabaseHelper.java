@@ -80,7 +80,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	/**
 	 * Метод для сохранения уведомления в базу данных
 	 */
-	public long insertNotification(NotificBD push) {
+	public boolean insertNotification(NotificBD push) {
 		// Открываем базу данных для записи
 		SQLiteDatabase db = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
@@ -98,8 +98,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 			logCat.logShow(DATABASE_HELPER,  "Ошибка при сохранении уведомления в SQLite");
 		} else {
 			logCat.logShow(DATABASE_HELPER,  "Уведомление успешно сохранено в SQLite. ID строки: " + newRowId);
+			return true;
 		}
-		return newRowId;
+		return false;
 	}
 
 	public void logAllNotifications() {
