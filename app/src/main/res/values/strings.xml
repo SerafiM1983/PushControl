@@ -19,4 +19,28 @@
         Then tap \"Allow restricted settings\" (this option may vary depending on your Android version)."</string>
 
     <string name="text_dialog_1">"This application requires permissions to function properly."</string>
+    <string name="bout_the_apps">ⓘ  About the app</string>
+    <string name="bout_the_apps_text">📱 <b>PushControl — Notification Control</b>\n\n
+        <b>Version:</b> 1.2 \n\n
+        <b>Developer: Nokolay Datchenko</b>\n\n
+            About the app: Notification Control is your personal tool for flexible management, filtering, and organizing
+        your notification shade. The app was created to free you from spam, intrusive ads, and to ensure you don\'t
+        miss truly important messages from the apps you need. \n\n
+        🔒 <b>Security and Permissions:</b>\n\n
+            To ensure full and stable operation on modern Android versions, the app requires two key permissions:\n
+            — Access to the list of apps (QUERY_ALL_PACKAGES): This permission is required solely to display a list
+            of apps installed on your tablet/phone. This allows you to manually select which apps you want to manage &amp;amp;
+            which ones to leave unchanged.\n
+            — Sending notifications (POST_NOTIFICATIONS): Required to display important system summaries, background monitoring service
+        alerts, and neatly organized notifications instead of cluttered notifications in the notification shade.\n\n
+        🛡️ <b>Data Privacy</b>\n\n
+        We value your privacy. The app does not collect, save, or transmit data about your installed packages or notification texts
+        to third-party servers. All processing, filtering, and analysis of push notifications occurs strictly locally on your device
+        (in a secure SQLite database).\n\n
+        ⓘ <b>Feedback</b>\n\n
+        If you have any questions, suggestions for improving the interface, or if you find a bug, please contact us through the app
+        store or by emailing the developer\'s support team.</string>
+
+    <string name="support">Support the developer</string>
+
 </resources>

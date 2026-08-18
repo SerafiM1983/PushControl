@@ -15,6 +15,7 @@
         android:textSize="18sp"
         android:padding="8dp"
         android:gravity="center"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
@@ -28,11 +29,11 @@
         android:layout_marginBottom="10dp"
         android:layout_marginTop="10dp"
         android:text="Принять"
+        android:textColor="?attr/colorOnSurface"
         android:backgroundTint="@color/search_show_grey"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title_dialog" />
-
     <Button
         android:id="@+id/app_permission_off"
         android:layout_width="wrap_content"
@@ -41,10 +42,10 @@
         android:layout_marginBottom="10dp"
         android:layout_marginTop="10dp"
         android:text="Отказать"
+        android:textColor="?attr/colorOnSurface"
         android:backgroundTint="@color/search_show_grey"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title_dialog" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

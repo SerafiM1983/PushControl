@@ -37,6 +37,7 @@ import com.serafimApp.pushcontrol.databinding.FragmentHomeBinding;
 import com.yandex.mobile.ads.banner.BannerAdSize;
 import com.yandex.mobile.ads.common.AdRequest;
 import com.yandex.mobile.ads.common.MobileAds;
+import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.ID_1;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class HomeFragment extends Fragment {
 		binding = FragmentHomeBinding.inflate(inflater, container, false);
 
 		// Яндекс баннер
-		binding.banner.setAdUnitId("R-M-19407785-1");
+		binding.banner.setAdUnitId(ID_1);
 		binding.banner.setAdSize(BannerAdSize.stickySize(getActivity().getApplicationContext(), 320));
 		AdRequest adRequest = new AdRequest.Builder().build();
 		binding.banner.loadAd(adRequest);
@@ -104,6 +105,9 @@ public class HomeFragment extends Fragment {
 
 			// Если открыли приложение просто так - показать общую ленту
 			notificationList = dbHelper.getAllNotifications();
+			if (notificationList.size() == 0) {
+				notificationList.add(new NotificBD("com.serafimApp.pushcontrol", "Как только у вас появятся сообщения они будут отображены здесь", "Системное сообщение"));
+			}
 			adapter = new NotificationsAdapter(notificationList, true);
 		}
 

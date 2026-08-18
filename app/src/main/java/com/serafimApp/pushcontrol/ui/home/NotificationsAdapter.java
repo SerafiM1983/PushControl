@@ -21,7 +21,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
 	private final List<NotificBD> notifications;
 	// Флаг для отображения иконки и названия приложения
-	private boolean isGeneralFeed;
+	private final boolean isGeneralFeed;
 
 	public NotificationsAdapter(List<NotificBD> notifications, boolean isGeneralFeed) {
 		this.notifications = notifications;
@@ -112,6 +112,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 			holder.imgAttachment.setVisibility(View.GONE);
 			}
 		}
+
 	}
 
 	@Override

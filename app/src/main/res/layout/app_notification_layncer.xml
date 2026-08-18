@@ -19,7 +19,8 @@
         android:textStyle="bold"
         android:layout_marginStart="15dp"
         android:layout_centerVertical="true"
-        android:text="AppName"/>
+        android:text="AppName"
+        android:textColor="?attr/colorOnSurface"/>
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/app_switch"

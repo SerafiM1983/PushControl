@@ -11,6 +11,11 @@
         android:name="com.serafimApp.pushcontrol.ui.home.HomeFragment"
         android:label="@string/general_feed"
         tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/nav_bout_app"
+        android:name="com.serafimApp.pushcontrol.ui.curtain.BoutTheAppsFragment"
+        android:label="@string/bout_the_apps"
+        tools:layout="@layout/bout_the_app" />
    <!--
     <fragment
         android:id="@+id/nav_gallery"

@@ -17,11 +17,13 @@ import android.provider.Settings;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
+import android.widget.TextView;
 
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
@@ -36,12 +38,15 @@ import com.serafimApp.pushcontrol.databinding.ActivityMainBinding;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 	LogCat logCat = new LogCat(false); // Отключен лог
 	private AppBarConfiguration mAppBarConfiguration;
 	private ActivityMainBinding binding;
 	private NotificationReceiver notificationReceiver;
 	private boolean isReceiverRegistered = false; // Флаг отслеживания регистрации
+	private TextView tv1, tv2;
+	private DrawerLayout drawer;
+	private NavController navController;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 		binding.navView.setItemIconTintList(null);
 		setSupportActionBar(binding.appBarMain.toolbar);
 
-		DrawerLayout drawer = binding.drawerLayout;
+		drawer = binding.drawerLayout;
 
 		// Добавляем слушатель состояния шторки
 		drawer.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
@@ -73,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 				R.id.nav_home)
 				.setOpenableLayout(drawer)
 				.build();
-		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+		navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 
 
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
@@ -147,10 +152,23 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		});
+		tv1 = binding.navView.findViewById(R.id.tv_about_the_apps);
+		tv1.setOnClickListener(this);
+
+
+	}
+	@Override
+	public void onClick(View view) {
+		if(view.getId() == R.id.tv_about_the_apps) {
+			// Закрываем боковую шторку меню
+			navController.navigate(R.id.nav_bout_app);
+			drawer.closeDrawers();
+		}
 	}
 
 	private void updateDrawerWithSelectedApps() {
-		if (binding == null || binding.navView == null) return;
+
+		if (binding == null) return;
 
 		NavigationView navigationView = binding.navView;
 		Menu menu = navigationView.getMenu();
@@ -194,9 +212,30 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 		}
+
+		// Если нет итемов в панели шторки
+		if (itemId == 1000) {
+			String gmailPackage = "com.google.android.gm";
+			try {
+				ApplicationInfo gmailInfo = pm.getApplicationInfo(gmailPackage, 0);
+				String appName = gmailInfo.loadLabel(pm).toString();
+				Drawable icon = pm.getApplicationIcon(gmailPackage);
+
+				MenuItem item = menu.add(R.id.dynamic_apps_croup, itemId, Menu.NONE, appName);
+				item.setIcon(icon);
+
+				Intent intent = new Intent();
+				intent.putExtra(PACKAGE_NAME, gmailPackage);
+				intent.putExtra(SELECTED_APP_NAME, appName);
+				item.setIntent(intent);
+			} catch (PackageManager.NameNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 
+	@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 	@Override
 	protected void onResume() {
 		super.onResume();

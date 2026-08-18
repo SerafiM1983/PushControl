@@ -21,9 +21,9 @@
             android:layout_height="match_parent"
             android:gravity="center_horizontal|center_vertical"
             android:text="Text"
-            android:textSize="20sp"/>
+            android:textSize="20sp"
+            android:textColor="?attr/colorOnSurface"/>
     </LinearLayout>
-
 
     <!-- Заголовок уведомления (Имя контакта / Группы) -->
     <TextView
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:textColor="?android:attr/textColorPrimary"/>
+        android:textColor="?attr/colorOnSurface"/>
 
     <!-- Текст сообщения -->
     <TextView
@@ -41,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary"/>
+        android:textColor="?attr/colorOnSurface"/>
 
     <ImageView
         android:id="@+id/img_notification_attachment"

@@ -16,10 +16,8 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 import com.serafimApp.pushcontrol.DataBaze.DatabaseHelper;
 import com.serafimApp.pushcontrol.DataBaze.NotificBD;
@@ -73,7 +71,9 @@ public class NotificationCatcherService extends NotificationListenerService {
 				// передают текст в виде сложного SpannableString, из-за чего обычный getString() может вернуть null.
 				text = extras.getCharSequence(Notification.EXTRA_TEXT) != null ?
 						extras.getCharSequence(Notification.EXTRA_TEXT).toString() : "";
-				if (title.equals("Аудиосообщение") && text.equals("Входящий видеозвонок")) return;
+				//if (title.equals("Аудиосообщение") && text.equals("Входящий видеозвонок")) return;
+
+				// ! ОБЕРНУТЬ В УСЛОВИЕ ДАТЬ ПОЛЬЗОВАТЕЛЮ ВЫБОР СОХРАНЯТЬ ИЛИ НЕТ
 
 				// --- НАЧАЛО ПЕРЕХВАТА РЕАЛЬНОЙ ФОТОГРАФИИ ---
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -158,7 +158,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 					}
 				}
 				push = new NotificBD(packageName, text, title, imageBytes, 0, serverId);
-				Log.d("SdReguest", "push = " + push.toString());
 			}
 		}
 		DatabaseHelper dbHelper = new DatabaseHelper(context);
@@ -171,39 +170,13 @@ public class NotificationCatcherService extends NotificationListenerService {
 			if (!dbHelper.insertNotification(push)) return;
 			handleNotification(push);
 			showPushControlSummaryNotification();
-			cancelNotification(sbn.getKey());
+			// Пока не удаляем сообщения
+			//cancelNotification(sbn.getKey());
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			dbHelper.close();
 		}
-
-
-		/*if (iaAllowedByUser) {
-			cancelNotification(sbn.getKey());
-			try {
-				DatabaseHelper dbHelper = new DatabaseHelper(context);
-				if (push.getTitle().isEmpty()) {
-					dbHelper.close();
-					return;
-				}
-				dbHelper.insertNotification(push);
-				dbHelper.logAllNotifications();
-				dbHelper.close();
-				handleNotification(push);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			// ИСПРАВЛЕНИЕ: Вызываем пуш с микрозадержкой, чтобы разделить транзакции в системе
-			new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
-				@Override
-				public void run() {
-					showPushControlSummaryNotification();
-				}
-			}, 100); // 100 миллисекунд достаточно
-		}*/
-
 	}
 
 	// Вспомогательный метод для перевода картинок в байты перед сохранением в SQLite
@@ -263,7 +236,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
 				androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
 						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
-			Log.e("PushControl", "Нет разрешения POST_NOTIFICATIONS");
 			return;
 		}
 
