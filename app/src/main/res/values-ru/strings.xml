@@ -7,7 +7,7 @@
     <string name="loading_finish">Загрузка завершина</string>
     <string name="permission_loads">Для работы приложения необходимо предоставить разрешения.</string>
     <string name="permission_loads_ok_notification_listener">Да</string>
-    <string name="settings_app">Настройки приложений</string>
+    <string name="settings_app">Выбор программ</string>
     <string name="clear_chat">Очистить чат</string>
     <string name="clear_all">Очистить все</string>
     <string name="text_dialog_2">"Разрешение не предоставлено, попробуйте предоставить.
@@ -38,5 +38,8 @@
           Если у вас возникли вопросы, предложения по улучшению интерфейса или вы нашли ошибку, пожалуйста, свяжитесь с нами
           через магазин приложений или по электронной почте поддержки разработчика.</string>
     <string name="support">Потдержать разработчика</string>
+    <string name="settings_user_bottom">⚙ Настройки</string>
+    <string name="user_jpg_save">Сохранение картинок</string>
+    <string name="user_sbn_clear">Удалять сообщения из шторки</string>
 
 </resources>

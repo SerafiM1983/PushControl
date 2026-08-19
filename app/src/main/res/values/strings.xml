@@ -9,7 +9,7 @@
     <string name="permission_loads">The application requires permissions to function.</string>
     <string name="permission_loads_of_notification_listener">Next</string>
     <string name="general_feed">General feed</string>
-    <string name="settings_app">Settings App</string>
+    <string name="settings_app">Selection of programs</string>
     <string name="clear_chat">Clear chat</string>
     <string name="clear_all">Clear all</string>
     <string name="permission_loads_ok_notification_listener">Ok</string>
@@ -42,5 +42,8 @@
         store or by emailing the developer\'s support team.</string>
 
     <string name="support">Support the developer</string>
+    <string name="settings_user_bottom">⚙Settings App</string>
+    <string name="user_jpg_save">Saving images</string>
+    <string name="user_sbn_clear">Delete messages from the notification shade</string>
 
 </resources>

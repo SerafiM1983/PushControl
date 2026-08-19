@@ -19,8 +19,12 @@ public abstract class PreferencesConstants {
 	//public static final String ID_2 = "R-M-19407785-2";
 
 	// Константы Яндекс рекламы test
-	public static final String ID_1 = "demo-interstitial-yandex"
-	public static final String ID_2 = "demo-interstitial-yandex"
+	public static final String ID_1 = "demo-interstitial-yandex";
+	public static final String ID_2 = "demo-interstitial-yandex";
+
+	// Константы меню настроек
+	public static final String USER_JPEG = "user_jpeg";
+	public static final String USER_SBN_SHOV = "user_sbn_shov";
 
 
 

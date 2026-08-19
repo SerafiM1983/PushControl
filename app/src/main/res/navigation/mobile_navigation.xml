@@ -16,23 +16,15 @@
         android:name="com.serafimApp.pushcontrol.ui.curtain.BoutTheAppsFragment"
         android:label="@string/bout_the_apps"
         tools:layout="@layout/bout_the_app" />
-   <!--
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="com.serafimApp.pushcontrol.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
-
-    <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.serafimApp.pushcontrol.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
-        -->
+        android:id="@+id/nav_setting_user_bottom"
+        android:name="com.serafimApp.pushcontrol.ui.curtain.SetingUserFragment"
+        android:label="@string/settings_user_bottom"
+        tools:layout="@layout/fragment_seting_user"/>
 
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.serafimApp.pushcontrol.ui.settings.FragmentSetting"
-        android:label="@string/action_settings"
+        android:label="@string/settings_app"
         tools:layout="@layout/fragment_settings" />
 </navigation>

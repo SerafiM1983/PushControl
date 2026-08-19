@@ -154,6 +154,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		});
 		tv1 = binding.navView.findViewById(R.id.tv_about_the_apps);
 		tv1.setOnClickListener(this);
+		tv2 = binding.navView.findViewById(R.id.tv_setting_user_curtain);
+		tv2.setOnClickListener(this);
 
 
 	}
@@ -162,6 +164,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		if(view.getId() == R.id.tv_about_the_apps) {
 			// Закрываем боковую шторку меню
 			navController.navigate(R.id.nav_bout_app);
+			drawer.closeDrawers();
+		}
+		if (view.getId() == R.id.tv_setting_user_curtain){
+			navController.navigate(R.id.nav_setting_user_bottom);
 			drawer.closeDrawers();
 		}
 	}

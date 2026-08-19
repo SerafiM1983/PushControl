@@ -24,6 +24,9 @@ import com.serafimApp.pushcontrol.DataBaze.NotificBD;
 import com.serafimApp.pushcontrol.MainActivity;
 import com.serafimApp.pushcontrol.R;
 
+import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.USER_JPEG;
+import static com.serafimApp.pushcontrol.Constans.PreferencesConstants.USER_SBN_SHOV;
+
 public class NotificationCatcherService extends NotificationListenerService {
 	@Override
 	public void onNotificationPosted(StatusBarNotification sbn) {
@@ -31,7 +34,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 		// 2. Жесткий фильтр системного мусора (зарядка, скриншоты и т.д.)
 
 		if (sbn.getPackageName() == null || sbn.getPackageName().equals("com.android.systemui") || sbn.getPackageName().equals("android")) {
-			Log.d("SdReguest", "return");
 			return;
 		}
 
@@ -41,7 +43,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 		SharedPreferences prefs = context.getSharedPreferences(PREF_IS_NOTIFIGATION_ENBLE, Context.MODE_PRIVATE);
 		boolean iaAllowedByUser = prefs.getBoolean(packageName, false);
 		if (!iaAllowedByUser) {
-			Log.d("SdReguest", "Нет в памяти выходим");
 			return;
 		}
 
@@ -60,7 +61,6 @@ public class NotificationCatcherService extends NotificationListenerService {
 				// Извлекаем Google Message ID
 				// Если его нет, берем уникальный ключ Android-уведомления (sbn.getKey())
 				if (serverId == null || serverId.isEmpty()) {
-					Log.d("SdReguest", sbn.getKey().toString());
 
 					serverId = sbn.getKey();
 				}
@@ -73,77 +73,35 @@ public class NotificationCatcherService extends NotificationListenerService {
 						extras.getCharSequence(Notification.EXTRA_TEXT).toString() : "";
 				//if (title.equals("Аудиосообщение") && text.equals("Входящий видеозвонок")) return;
 
-				// ! ОБЕРНУТЬ В УСЛОВИЕ ДАТЬ ПОЛЬЗОВАТЕЛЮ ВЫБОР СОХРАНЯТЬ ИЛИ НЕТ
+				if (prefs.getBoolean(USER_JPEG, false)) {
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+						if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
+							Bundle extrasBuilde = sbn.getNotification().extras;
 
-				// --- НАЧАЛО ПЕРЕХВАТА РЕАЛЬНОЙ ФОТОГРАФИИ ---
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-					if (sbn.getNotification() != null && sbn.getNotification().extras != null) {
-						Bundle extrasBuilde = sbn.getNotification().extras;
-
-						//  СПЕЦИАЛЬНО ДЛЯ TELEGRAM, WHATSAPP И VIBER (MessagingStyle)
-						if (imageBytes == null && extrasBuilde.containsKey(Notification.EXTRA_MESSAGES)) {
-							Parcelable[] messages = (Parcelable[]) extrasBuilde.get(Notification.EXTRA_MESSAGES);
-							if (messages != null && messages.length > 0) {
-								// Берем самое последнее сообщение из списка (текущее пришедшее фото)
-								Parcelable lastMessage = messages[messages.length - 1];
-								if (lastMessage instanceof Bundle) {
-									Bundle msgBundle = (Bundle) lastMessage;
-
-									// Проверяем тип данных. Если это картинка (image/), достаем её URI или Data
-									if (msgBundle.containsKey("dataMimeType") &&
-											msgBundle.getString("dataMimeType", "").startsWith("image/")) {
-
-										// Проверяем наличие прямого Bitmap внутри вложения
-										if (msgBundle.containsKey("dataUri")) {
-											android.net.Uri dataUri = (android.net.Uri) msgBundle.get("dataUri");
-											if (dataUri != null) {
-												try {
-													// Читаем картинку из URI контент-провайдера мессенджера
-													android.content.ContentResolver cr = context.getContentResolver();
-													java.io.InputStream is = cr.openInputStream(dataUri);
-													Bitmap bitmap = BitmapFactory.decodeStream(is);
-													if (bitmap != null) {
-														imageBytes = bitmapToByteArray(bitmap);
-													}
-												} catch (Exception e) {
-													e.printStackTrace();
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-
-						// Проверяем, что пуш пришел именно от МАКС
-						if (/*"ru.oneme.app".equals(packageName)*/true) {
-							// Сканируем массив android.messages (как показал ваш лог)
-							if (extras.containsKey(Notification.EXTRA_MESSAGES)) {
-								Parcelable[] messages = (Parcelable[]) extras.get(Notification.EXTRA_MESSAGES);
+							//  СПЕЦИАЛЬНО ДЛЯ TELEGRAM, WHATSAPP И VIBER (MessagingStyle)
+							if (imageBytes == null && extrasBuilde.containsKey(Notification.EXTRA_MESSAGES)) {
+								Parcelable[] messages = (Parcelable[]) extrasBuilde.get(Notification.EXTRA_MESSAGES);
 								if (messages != null && messages.length > 0) {
+									// Берем самое последнее сообщение из списка (текущее пришедшее фото)
+									Parcelable lastMessage = messages[messages.length - 1];
+									if (lastMessage instanceof Bundle) {
+										Bundle msgBundle = (Bundle) lastMessage;
 
-									// МАКС дублирует вложения в цепочке сообщений.
-									// Перебираем массив с конца к началу, чтобы найти САМОЕ ПОСЛЕДНЕЕ прикрепленное фото
-									for (int i = messages.length - 1; i >= 0; i--) {
-										if (messages[i] instanceof Bundle) {
-											Bundle msgBundle = (Bundle) messages[i];
+										// Проверяем тип данных. Если это картинка (image/), достаем её URI или Data
+										if (msgBundle.containsKey("dataMimeType") &&
+												msgBundle.getString("dataMimeType", "").startsWith("image/")) {
 
-											// Проверяем тип, как в логе: [type] = image/*
-											String type = msgBundle.getString("type", "");
-											if (type != null && type.startsWith("image/")) {
-
-												// Извлекаем URI: [uri]
-												Object uriObj = msgBundle.get("uri");
-												if (uriObj instanceof android.net.Uri) {
-													android.net.Uri dataUri = (android.net.Uri) uriObj;
-
-													// БЕЗОПАСНОЕ ЧТЕНИЕ: Используем контекст самого сервиса уведомлений,
-													// чтобы обойти SecurityException ограничения контент-провайдера МАКС
-													try (java.io.InputStream is = getContentResolver().openInputStream(dataUri)) {
+											// Проверяем наличие прямого Bitmap внутри вложения
+											if (msgBundle.containsKey("dataUri")) {
+												android.net.Uri dataUri = (android.net.Uri) msgBundle.get("dataUri");
+												if (dataUri != null) {
+													try {
+														// Читаем картинку из URI контент-провайдера мессенджера
+														android.content.ContentResolver cr = context.getContentResolver();
+														java.io.InputStream is = cr.openInputStream(dataUri);
 														Bitmap bitmap = BitmapFactory.decodeStream(is);
 														if (bitmap != null) {
 															imageBytes = bitmapToByteArray(bitmap);
-															break; // Фото найдено и сохранено, выходим из цикла!
 														}
 													} catch (Exception e) {
 														e.printStackTrace();
@@ -154,9 +112,51 @@ public class NotificationCatcherService extends NotificationListenerService {
 									}
 								}
 							}
+
+							// Проверяем, что пуш пришел именно от МАКС
+							if (/*"ru.oneme.app".equals(packageName)*/true) {
+								// Сканируем массив android.messages (как показал ваш лог)
+								if (extras.containsKey(Notification.EXTRA_MESSAGES)) {
+									Parcelable[] messages = (Parcelable[]) extras.get(Notification.EXTRA_MESSAGES);
+									if (messages != null && messages.length > 0) {
+
+										// МАКС дублирует вложения в цепочке сообщений.
+										// Перебираем массив с конца к началу, чтобы найти САМОЕ ПОСЛЕДНЕЕ прикрепленное фото
+										for (int i = messages.length - 1; i >= 0; i--) {
+											if (messages[i] instanceof Bundle) {
+												Bundle msgBundle = (Bundle) messages[i];
+
+												// Проверяем тип, как в логе: [type] = image/*
+												String type = msgBundle.getString("type", "");
+												if (type != null && type.startsWith("image/")) {
+
+													// Извлекаем URI: [uri]
+													Object uriObj = msgBundle.get("uri");
+													if (uriObj instanceof android.net.Uri) {
+														android.net.Uri dataUri = (android.net.Uri) uriObj;
+
+														// БЕЗОПАСНОЕ ЧТЕНИЕ: Используем контекст самого сервиса уведомлений,
+														// чтобы обойти SecurityException ограничения контент-провайдера МАКС
+														try (java.io.InputStream is = getContentResolver().openInputStream(dataUri)) {
+															Bitmap bitmap = BitmapFactory.decodeStream(is);
+															if (bitmap != null) {
+																imageBytes = bitmapToByteArray(bitmap);
+																break; // Фото найдено и сохранено, выходим из цикла!
+															}
+														} catch (Exception e) {
+															e.printStackTrace();
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 					}
 				}
+
 				push = new NotificBD(packageName, text, title, imageBytes, 0, serverId);
 			}
 		}
@@ -171,7 +171,10 @@ public class NotificationCatcherService extends NotificationListenerService {
 			handleNotification(push);
 			showPushControlSummaryNotification();
 			// Пока не удаляем сообщения
-			//cancelNotification(sbn.getKey());
+			if (prefs.getBoolean(USER_SBN_SHOV, false)){
+				cancelNotification(sbn.getKey());
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
